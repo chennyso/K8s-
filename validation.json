@@ -1,0 +1,179 @@
+{
+  "date": "2026-10-26",
+  "source_pdf": {
+    "pages": 1456,
+    "verified_reference_pages": [
+      108,
+      109,
+      112,
+      114,
+      134,
+      140,
+      141,
+      349,
+      357,
+      423,
+      430,
+      482,
+      1134,
+      1277,
+      1430,
+      1449,
+      1450
+    ],
+    "inspection": "text_and_headings",
+    "document_instructions_executed": false
+  },
+  "content": {
+    "questions": 30,
+    "learning_sections": 10,
+    "total_sections": 12,
+    "self_checks": 10,
+    "core_subjects": [
+      "Linux",
+      "Docker",
+      "Kubernetes",
+      "Prometheus",
+      "Volcano"
+    ],
+    "code_blocks": 0,
+    "text_characters": 21292,
+    "anchors": "passed",
+    "all_questions_have_answers": true
+  },
+  "images": {
+    "total": 14,
+    "original_pdf_images": 3,
+    "original_image_bytes": "identical_to_pdf",
+    "pdf_pages": [
+      304,
+      424,
+      1278
+    ],
+    "mermaid_diagrams": [
+      "learning-docker",
+      "learning-kubernetes",
+      "learning-monitoring",
+      "learning-nginx",
+      "learning-release",
+      "learning-resources",
+      "learning-service",
+      "learning-services",
+      "learning-troubleshooting",
+      "learning-volcano",
+      "learning-web-request"
+    ],
+    "source_wrapper_consistency": "passed"
+  },
+  "project_basis": "0822eaaab47959f4f474b1803202907e9bb2dfa6",
+  "remote_cluster_changes": "not_executed",
+  "browser": {
+    "default_learning_view": "passed",
+    "loaded_images": [
+      {
+        "file": "figures/learning-services.svg",
+        "naturalWidth": 158,
+        "naturalHeight": 150
+      },
+      {
+        "file": "figures/learning-resources.svg",
+        "naturalWidth": 282,
+        "naturalHeight": 150
+      },
+      {
+        "file": "figures/learning-web-request.svg",
+        "naturalWidth": 57,
+        "naturalHeight": 150
+      },
+      {
+        "file": "figures/pdf-http-request.png",
+        "naturalWidth": 589,
+        "naturalHeight": 372
+      },
+      {
+        "file": "figures/learning-nginx.svg",
+        "naturalWidth": 150,
+        "naturalHeight": 150
+      },
+      {
+        "file": "figures/pdf-nginx-architecture.png",
+        "naturalWidth": 793,
+        "naturalHeight": 519
+      },
+      {
+        "file": "figures/learning-docker.svg",
+        "naturalWidth": 170,
+        "naturalHeight": 150
+      },
+      {
+        "file": "figures/pdf-container-storage.png",
+        "naturalWidth": 1028,
+        "naturalHeight": 367
+      },
+      {
+        "file": "figures/learning-kubernetes.svg",
+        "naturalWidth": 260,
+        "naturalHeight": 150
+      },
+      {
+        "file": "figures/learning-service.svg",
+        "naturalWidth": 143,
+        "naturalHeight": 150
+      },
+      {
+        "file": "figures/learning-monitoring.svg",
+        "naturalWidth": 109,
+        "naturalHeight": 150
+      },
+      {
+        "file": "figures/learning-volcano.svg",
+        "naturalWidth": 98,
+        "naturalHeight": 150
+      },
+      {
+        "file": "figures/learning-troubleshooting.svg",
+        "naturalWidth": 63,
+        "naturalHeight": 150
+      },
+      {
+        "file": "figures/learning-release.svg",
+        "naturalWidth": 70,
+        "naturalHeight": 150
+      }
+    ],
+    "all_14_images_visible": "passed",
+    "original_image_open": "passed",
+    "learning_interview_switch": "passed",
+    "question_and_lesson_search": "passed",
+    "core_subject_search": "passed",
+    "navigation": "passed",
+    "recall_keeps_learning_images": "passed",
+    "self_check_persistence": "passed",
+    "print_answers_and_images": "passed",
+    "viewports": [
+      {
+        "width": 1440,
+        "scrollWidth": 1440
+      },
+      {
+        "width": 768,
+        "scrollWidth": 768
+      },
+      {
+        "width": 390,
+        "scrollWidth": 390
+      }
+    ],
+    "script_errors": [],
+    "external_requests": 0,
+    "screenshots": "not_used"
+  },
+  "offline_bundle": {
+    "archive_extracted": true,
+    "visible_images": 14,
+    "visible_learning_sections": 10,
+    "failed_requests": [],
+    "remote_requests": [],
+    "result": "passed"
+  }
+}

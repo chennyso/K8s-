@@ -1,0 +1,12 @@
+# 程序、进程和服务
+
+沿着程序启动、提供服务、生成日志的过程理解 Linux 服务管理。
+
+```mermaid
+flowchart TD
+    files["磁盘中的程序和配置"] -->|"启动程序"| process["运行中的进程"]
+    manager["systemd 服务管理"] -->|"启动、停止、读取状态"| process
+    process -->|"持续提供功能"| service["Nginx 网页服务"]
+    browser["浏览器"] -->|"请求网页"| service
+    service -->|"写入运行信息"| logs["访问日志与错误日志"]
+```

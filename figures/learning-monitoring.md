@@ -1,0 +1,13 @@
+# 从指标到面板和告警
+
+Prometheus 主动采集，Grafana 查询数据，Alertmanager 处理通知。
+
+```mermaid
+flowchart TD
+    nodes["节点、容器和对象状态"] -->|"提供指标"| metrics["指标采集接口"]
+    prometheus["Prometheus"] -->|"定期请求接口"| metrics
+    metrics -->|"返回数值样本"| prometheus
+    grafana["Grafana 面板"] -->|"查询时间序列"| prometheus
+    prometheus -->|"条件持续满足时发送告警"| alertmanager["Alertmanager"]
+    alertmanager -->|"按已配置渠道通知"| receiver["使用者"]
+```

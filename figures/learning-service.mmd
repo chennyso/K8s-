@@ -1,0 +1,5 @@
+flowchart TD
+    browser["朋友的浏览器"] -->|"访问节点地址与 31258 端口"| entry["NodePort 访问入口"]
+    entry --> service["Service 根据标签找到可用 Pod"]
+    service -->|"选择准备好的实例"| first["Pod A<br/>Nginx 监听 80 端口"]
+    service -->|"选择准备好的实例"| second["Pod B<br/>Nginx 监听 80 端口"]

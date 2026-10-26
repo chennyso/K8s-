@@ -1,0 +1,16 @@
+# 从访问变慢判断资源问题
+
+同时观察资源和请求，再结合证据确定原因。
+
+```mermaid
+flowchart TD
+    slow["网页访问变慢"] --> cpu["CPU<br/>找出主要占用进程"]
+    slow --> memory["内存<br/>查看可用空间"]
+    slow --> storage["磁盘<br/>查看容量和读写"]
+    slow --> requests["流量<br/>查看请求和错误"]
+    cpu --> evidence["结合时间、进程和日志确定原因"]
+    memory --> evidence
+    storage --> evidence
+    requests --> evidence
+    evidence --> verify["处理后再次请求网页并观察指标"]
+```
