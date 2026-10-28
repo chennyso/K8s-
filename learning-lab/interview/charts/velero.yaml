@@ -1,0 +1,31 @@
+credentials:
+  useSecret: true
+  existingSecret: velero-cloud
+initContainers:
+  - name: aws-plugin
+    image: velero/velero-plugin-for-aws:v1.14.0
+    volumeMounts:
+      - {mountPath: /target, name: plugins}
+configuration:
+  backupStorageLocation:
+    - name: default
+      provider: aws
+      bucket: velero
+      default: true
+      config:
+        region: us-east-1
+        s3ForcePathStyle: "true"
+        s3Url: http://192.168.204.1:18333
+        checksumAlgorithm: ""
+  volumeSnapshotLocation: []
+  defaultVolumesToFsBackup: true
+snapshotsEnabled: false
+deployNodeAgent: true
+nodeAgent:
+  podVolumePath: /var/lib/kubelet/pods
+  resources:
+    requests: {cpu: 50m, memory: 128Mi}
+    limits: {cpu: "1", memory: 768Mi}
+resources:
+  requests: {cpu: 50m, memory: 128Mi}
+  limits: {cpu: "1", memory: 512Mi}

@@ -1,0 +1,1 @@
+["gitlab/gitlab-runner:alpine-v19.4.0","registry.gitlab.com/gitlab-org/gitlab-runner/gitlab-runner-helper:x86_64-v19.4.0","moby/buildkit:v0.25.1-rootless"]

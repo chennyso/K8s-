@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Namespace
+metadata: {name: ci}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: ci-runner, namespace: ci}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: ci-job, namespace: ci}
+automountServiceAccountToken: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: {name: ci-runner, namespace: ci}
+rules:
+  - apiGroups: [""]
+    resources: [pods, pods/exec, pods/attach, pods/log, secrets, services, serviceaccounts, events]
+    verbs: [get, list, watch, create, patch, update, delete]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: ci-runner, namespace: ci}
+subjects: [{kind: ServiceAccount, name: ci-runner, namespace: ci}]
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: ci-runner}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: gitlab-runner, namespace: ci}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: gitlab-runner}
+  template:
+    metadata:
+      labels: {app: gitlab-runner}
+    spec:
+      serviceAccountName: ci-runner
+      initContainers:
+        - name: register
+          image: gitlab/gitlab-runner:alpine-v19.4.0
+          command: [sh, -ec]
+          args:
+            - gitlab-runner register --non-interactive --url http://192.168.204.1:18080 --token "$RUNNER_TOKEN" --executor kubernetes --kubernetes-namespace ci --config /config/config.toml --template-config /template/config.toml
+          envFrom: [{secretRef: {name: runner-token}}]
+          volumeMounts:
+            - {name: config, mountPath: /config}
+            - {name: template, mountPath: /template}
+      containers:
+        - name: runner
+          image: gitlab/gitlab-runner:alpine-v19.4.0
+          command: [gitlab-runner, run, --config, /config/config.toml, --working-directory, /home/gitlab-runner]
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {cpu: 500m, memory: 256Mi}
+          volumeMounts: [{name: config, mountPath: /config}]
+      volumes:
+        - {name: config, emptyDir: {}}
+        - name: template
+          configMap: {name: runner-template}

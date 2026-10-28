@@ -1,0 +1,6 @@
+spec:
+  template:
+    spec:
+      containers:
+        - name: tasks
+          image: 192.168.204.1:15000/learning/tasks:intended-missing-drill

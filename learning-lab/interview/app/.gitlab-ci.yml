@@ -1,0 +1,22 @@
+stages: [test, build]
+variables:
+  GIT_STRATEGY: clone
+  IMAGE_NAME: 192.168.204.1:15000/learning/tasks:1.0.1
+
+integration:
+  stage: test
+  image: 192.168.204.1:15000/learning/tasks:1.0.0
+  script:
+    - python tests/integration.py
+
+build:
+  stage: build
+  image:
+    name: 192.168.204.1:15000/learning/buildkit:v0.25.1-rootless
+    entrypoint: [""]
+  variables:
+    BUILDKITD_FLAGS: --oci-worker-no-process-sandbox --config /etc/buildkit/buildkitd.toml
+    XDG_RUNTIME_DIR: /run/user/1000
+    DOCKER_CONFIG: /home/user/.docker
+  script:
+    - buildctl-daemonless.sh build --frontend dockerfile.v0 --local context=. --local dockerfile=. --output type=image,name=$IMAGE_NAME,push=true

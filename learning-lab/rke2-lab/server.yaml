@@ -1,0 +1,15 @@
+node-name: rke2-server-1
+node-ip: 192.168.204.11
+advertise-address: 192.168.204.11
+tls-san:
+  - 192.168.204.11
+  - localhost
+cluster-cidr: 10.244.0.0/16
+service-cidr: 10.245.0.0/16
+cluster-dns: 10.245.0.10
+cni: canal
+ingress-controller: traefik
+write-kubeconfig-mode: "0600"
+node-taint:
+  - node-role.kubernetes.io/control-plane=true:NoSchedule
+etcd-snapshot-retention: 5

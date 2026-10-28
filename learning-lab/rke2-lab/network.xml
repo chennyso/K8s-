@@ -1,0 +1,14 @@
+<network>
+  <name>rke2-lab</name>
+  <forward mode='nat'/>
+  <bridge name='virbr-rke2' stp='on' delay='0'/>
+  <ip address='192.168.204.1' netmask='255.255.255.0'>
+    <dhcp>
+      <range start='192.168.204.100' end='192.168.204.199'/>
+      <host mac='52:54:00:cc:04:11' name='rke2-server-1' ip='192.168.204.11'/>
+      <host mac='52:54:00:cc:04:12' name='rke2-worker-1' ip='192.168.204.12'/>
+      <host mac='52:54:00:cc:04:13' name='rke2-worker-2' ip='192.168.204.13'/>
+      <host mac='52:54:00:cc:04:14' name='rke2-worker-3' ip='192.168.204.14'/>
+    </dhcp>
+  </ip>
+</network>

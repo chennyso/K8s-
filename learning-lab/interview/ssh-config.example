@@ -1,0 +1,5 @@
+Host lab-91
+  HostName jump.example.invalid
+  User learner
+  ServerAliveInterval 30
+  ServerAliveCountMax 3

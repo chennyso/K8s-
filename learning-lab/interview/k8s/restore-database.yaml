@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: restored-postgres, namespace: backup-restored}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: interview-nfs
+  resources:
+    requests: {storage: 1Gi}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: restored-postgres, namespace: backup-restored}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: restored-postgres}
+  template:
+    metadata:
+      labels: {app: restored-postgres}
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: postgres
+          image: postgres:18-bookworm
+          env:
+            - {name: POSTGRES_USER, value: learning}
+            - {name: POSTGRES_DB, value: learning}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: database-password, key: password}
+            - {name: PGDATA, value: /var/lib/postgresql/data/pgdata}
+          readinessProbe:
+            exec: {command: [pg_isready, -U, learning, -d, learning]}
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {cpu: 500m, memory: 256Mi}
+          volumeMounts:
+            - {name: database, mountPath: /var/lib/postgresql/data}
+            - {name: dump, mountPath: /backup, readOnly: true}
+      volumes:
+        - name: database
+          persistentVolumeClaim: {claimName: restored-postgres}
+        - name: dump
+          persistentVolumeClaim: {claimName: database-dumps}

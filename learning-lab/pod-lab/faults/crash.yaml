@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fault-crash
+  namespace: pod-lab
+spec:
+  automountServiceAccountToken: false
+  containers:
+    - name: failing-process
+      image: busybox:1.37.0
+      imagePullPolicy: Never
+      command: [sh, -ec, 'printf "故障演练：进程主动退出，退出码为 7\n"; exit 7']
+      resources:
+        requests: {cpu: 5m, memory: 8Mi}
+        limits: {cpu: 100m, memory: 32Mi}

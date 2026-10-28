@@ -1,0 +1,159 @@
+apiVersion: v1
+kind: Namespace
+metadata: {name: interview-app}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: postgres-data, namespace: interview-app}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: interview-nfs
+  resources:
+    requests: {storage: 2Gi}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: postgres, namespace: interview-app}
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: postgres}
+  template:
+    metadata:
+      labels: {app: postgres}
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: postgres
+          image: postgres:18-bookworm
+          env:
+            - {name: POSTGRES_DB, value: learning}
+            - {name: POSTGRES_USER, value: learning}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: application, key: POSTGRES_PASSWORD}
+            - {name: PGDATA, value: /var/lib/postgresql/data/pgdata}
+          ports: [{name: postgres, containerPort: 5432}]
+          readinessProbe:
+            exec: {command: [pg_isready, -U, learning, -d, learning]}
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: "1", memory: 512Mi}
+          volumeMounts: [{name: data, mountPath: /var/lib/postgresql/data}]
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: postgres-data}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: postgres, namespace: interview-app}
+spec:
+  selector: {app: postgres}
+  ports: [{port: 5432, targetPort: postgres}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: tasks, namespace: interview-app}
+spec:
+  replicas: 2
+  strategy:
+    rollingUpdate: {maxUnavailable: 0, maxSurge: 1}
+  selector:
+    matchLabels: {app: tasks}
+  template:
+    metadata:
+      labels: {app: tasks}
+    spec:
+      automountServiceAccountToken: false
+      imagePullSecrets: [{name: registry}]
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: tasks
+          image: 192.168.204.1:15000/learning/tasks:1.0.0
+          imagePullPolicy: IfNotPresent
+          envFrom: [{secretRef: {name: application}}]
+          ports: [{name: http, containerPort: 8080}]
+          startupProbe:
+            httpGet: {path: /readyz, port: http}
+            periodSeconds: 3
+            failureThreshold: 40
+          readinessProbe:
+            httpGet: {path: /readyz, port: http}
+            periodSeconds: 3
+            failureThreshold: 2
+          livenessProbe:
+            httpGet: {path: /livez, port: http}
+            periodSeconds: 5
+          resources:
+            requests: {cpu: 100m, memory: 64Mi}
+            limits: {cpu: "1", memory: 192Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tasks
+  namespace: interview-app
+  labels: {app: tasks}
+spec:
+  type: NodePort
+  selector: {app: tasks}
+  ports: [{name: http, port: 8080, targetPort: http, nodePort: 30083}]
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata: {name: tasks, namespace: interview-app}
+spec:
+  scaleTargetRef: {apiVersion: apps/v1, kind: Deployment, name: tasks}
+  minReplicas: 2
+  maxReplicas: 4
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: {type: Utilization, averageUtilization: 50}
+  behavior:
+    scaleDown: {stabilizationWindowSeconds: 60}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: {name: tasks, namespace: interview-app}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: {app: tasks}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: tasks
+  namespace: interview-app
+  labels: {release: monitoring}
+spec:
+  selector:
+    matchLabels: {app: tasks}
+  endpoints: [{port: http, path: /metrics, interval: 15s}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: postgres-ingress, namespace: interview-app}
+spec:
+  podSelector:
+    matchLabels: {app: postgres}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: {app: tasks}
+        - podSelector:
+            matchLabels: {app: database-backup}
+          namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: backup-lab}
+      ports: [{protocol: TCP, port: 5432}]

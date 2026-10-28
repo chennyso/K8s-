@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="四节点 RKE2 Kubernetes 实操教程：虚拟机、Pod、监控、任务系统、发布和备份恢复。">
+<title>从零搭建 Kubernetes 与项目实战</title>
+<style>
+:root{color-scheme:light;--ink:#173047;--muted:#526575;--line:#d6e0e7;--accent:#075d83}*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:20px}body{margin:0;color:var(--ink);background:#f3f6f8;font:17px/1.85 system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}aside{position:fixed;inset:0 auto 0 0;width:290px;padding:28px 22px;overflow:auto;border-right:1px solid var(--line);background:white}aside strong{display:block;font-size:22px;margin-bottom:18px}aside a{display:block;padding:9px 0;font-size:14px;line-height:1.6}a{color:var(--accent);text-underline-offset:4px}main{max-width:1260px;margin-left:290px;padding:36px 5vw 90px}.intro,.chapter{background:white;padding:32px 40px;margin-bottom:28px;border:1px solid var(--line);border-radius:12px}.intro h1{font-size:32px}.intro p{color:var(--muted)}h1,h2,h3{line-height:1.5}h1{font-size:29px}h2{font-size:24px;margin-top:48px;border-bottom:1px solid var(--line);padding-bottom:12px}h3{font-size:20px;margin-top:30px}pre{overflow:auto;background:#102534;color:#e2edf5;padding:20px;border-radius:8px;font-size:14px;line-height:1.7}code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere}p code,li code,td code{font-size:.88em;background:#edf3f6;padding:2px 5px;border-radius:3px}table{display:block;overflow:auto;width:100%;border-collapse:collapse;font-size:15px;margin:24px 0}th,td{border:1px solid var(--line);padding:11px 14px;min-width:110px;text-align:left}th{background:#edf3f6}button,input{font:inherit}button{background:var(--accent);color:white;border:0;border-radius:5px;cursor:pointer;padding:7px 12px}.copy{display:block;margin:0 0 8px auto;font-size:12px}input{width:100%;padding:8px;border:1px solid var(--line);border-radius:5px;font-size:14px}.mermaid{background:#f8fbfd;color:var(--ink);text-align:center}.mermaid svg{max-width:100%!important;height:auto}#search-status{font-size:13px;color:var(--muted)}.chapter[hidden]{display:none}.notice{border-left:4px solid var(--accent);padding-left:16px}@media(max-width:900px){aside{position:static;width:auto;max-height:none}main{margin:0;padding:18px}.intro,.chapter{padding:20px}h1{font-size:25px}}@media print{aside,button,.copy{display:none!important}main{margin:0;padding:0;max-width:none}.intro,.chapter{border:0;padding:0;break-before:page}pre{white-space:pre-wrap;background:#f5f5f5;color:#111}table{display:table}a{color:inherit}}
+</style>
+</head>
+<body>
+<aside><strong>Kubernetes 项目实战</strong><label for="search">搜索章节</label><input id="search" type="search" placeholder="例如：探针、备份、RKE2"><p id="search-status" aria-live="polite"></p><nav>{{NAVIGATION}}</nav><p><a href="../index.html">Linux 与容器基础教程</a><a href="README.md">源码与公开内容说明</a></p><button id="print">打印教程</button></aside>
+<main><header class="intro"><p>实验环境 · 2026 年 10 月 28 日</p><h1>从零搭建 Kubernetes 与项目实战</h1><p>按照概念理解、集群安装、项目操作、状态观察和故障恢复的顺序学习。七篇配套教程提供命令、配置解释和练习。</p><p class="notice">操作前确认自己的集群和命名空间。本文私有地址描述实验拓扑，复现时修改为自己的网络。故障实验会重启容器、修改副本或停止数据库，请在专用实验环境执行。认证信息由读者自行生成并保存在私有目录。</p></header>{{CONTENT}}</main>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
+<script>
+mermaid.initialize({startOnLoad:true,securityLevel:'strict',theme:'neutral'});
+document.querySelector('#print').addEventListener('click',()=>window.print());
+document.querySelector('#search').addEventListener('input',event=>{const query=event.target.value.trim().toLowerCase();let count=0;document.querySelectorAll('.chapter').forEach(section=>{section.hidden=!!query&&!section.textContent.toLowerCase().includes(query);if(!section.hidden)count++;});document.querySelector('#search-status').textContent=`显示 ${count} / 7 篇教程`;});
+document.querySelectorAll('pre:not(.mermaid)').forEach(block=>{const button=document.createElement('button');button.className='copy';button.textContent='复制命令';button.addEventListener('click',async()=>{await navigator.clipboard.writeText(block.querySelector('code').textContent);button.textContent='已经复制';setTimeout(()=>button.textContent='复制命令',1500);});block.prepend(button);});
+document.querySelectorAll('nav a').forEach(link=>link.addEventListener('click',()=>{document.querySelector('#search').value='';document.querySelectorAll('.chapter').forEach(section=>section.hidden=false);document.querySelector('#search-status').textContent='';}));
+</script>
+</body></html>

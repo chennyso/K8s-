@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fault-oom
+  namespace: pod-lab
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  containers:
+    - name: memory-writer
+      image: busybox:1.37.0
+      imagePullPolicy: Never
+      command: [dd, if=/dev/zero, of=/work/blob, bs=1M, count=128]
+      resources:
+        requests: {cpu: 10m, memory: 8Mi}
+        limits: {cpu: 100m, memory: 16Mi}
+      volumeMounts:
+        - {name: memory, mountPath: /work}
+  volumes:
+    - name: memory
+      emptyDir:
+        medium: Memory
+        sizeLimit: 128Mi

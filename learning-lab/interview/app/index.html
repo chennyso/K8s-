@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>204 Kubernetes 学习任务系统</title>
+<style>body{max-width:850px;margin:40px auto;padding:20px;font:18px system-ui;background:#f5f3ee;color:#19253a}input,button{font:inherit;padding:10px;margin:6px}article{background:white;padding:24px;margin:18px 0;border:1px solid #cbd0d8}li{margin:12px 0}output{white-space:pre-wrap}</style>
+<h1>204 Kubernetes 学习任务系统</h1>
+<p>创建学习任务，观察 Pod 重建、数据库持久化、日志、指标和自动扩容。</p>
+<article><h2>登录</h2><input id="username" value="learner" aria-label="账号"><input id="password" type="password" placeholder="学习账号密码" aria-label="密码"><button id="login">登录</button></article>
+<article><h2>我的学习任务</h2><input id="title" placeholder="例如：完成 readiness 故障演练" aria-label="任务标题"><button id="add">创建任务</button><button id="refresh">刷新列表</button><ul id="tasks"></ul></article>
+<article><h2>请求结果</h2><output id="result">请登录后操作。</output></article>
+<script>
+const result=document.querySelector('#result');
+async function api(path,method='GET',data){const r=await fetch(path,{method,headers:{'Content-Type':'application/json'},body:data?JSON.stringify(data):undefined});const text=await r.text();result.textContent=`HTTP ${r.status}\nPod: ${r.headers.get('X-Pod-Name')}\n${text}`;if(!r.ok)throw Error(text);return text?JSON.parse(text):null;}
+async function list(){const data=await api('/api/tasks');const ul=document.querySelector('#tasks');ul.replaceChildren();for(const task of data){const li=document.createElement('li');const check=document.createElement('input');check.type='checkbox';check.checked=task.done;check.onchange=async()=>{await api('/api/tasks/'+task.id,'PUT',{title:task.title,done:check.checked});await list();};const title=document.createTextNode(task.title);const remove=document.createElement('button');remove.textContent='删除';remove.onclick=async()=>{await api('/api/tasks/'+task.id,'DELETE');await list();};li.append(check,title,remove);ul.append(li);}}
+document.querySelector('#login').onclick=async()=>{await api('/api/login','POST',{username:document.querySelector('#username').value,password:document.querySelector('#password').value});await list();};
+document.querySelector('#add').onclick=async()=>{await api('/api/tasks','POST',{title:document.querySelector('#title').value});document.querySelector('#title').value='';await list();};
+document.querySelector('#refresh').onclick=list;
+</script></html>

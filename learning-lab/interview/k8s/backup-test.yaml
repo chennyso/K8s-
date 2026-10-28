@@ -1,0 +1,8 @@
+apiVersion: velero.io/v1
+kind: Backup
+metadata: {name: learning-drill, namespace: velero}
+spec:
+  includedNamespaces: [backup-lab]
+  defaultVolumesToFsBackup: true
+  snapshotVolumes: false
+  ttl: 168h

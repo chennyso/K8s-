@@ -1,0 +1,18 @@
+[req]
+distinguished_name = dn
+req_extensions = req_ext
+prompt = no
+[dn]
+CN = registry.204.test
+[req_ext]
+subjectAltName = @names
+[names]
+DNS.1 = registry.204.test
+DNS.2 = localhost
+IP.1 = 192.168.204.1
+IP.2 = 127.0.0.1
+[server]
+basicConstraints = CA:FALSE
+keyUsage = critical,digitalSignature,keyEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = @names

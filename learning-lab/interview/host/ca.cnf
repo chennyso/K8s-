@@ -1,0 +1,11 @@
+[req]
+distinguished_name = dn
+x509_extensions = root_ca
+prompt = no
+[dn]
+CN = 204 Interview Lab Root CA
+O = Interview Lab
+[root_ca]
+basicConstraints = critical,CA:TRUE
+keyUsage = critical,keyCertSign,cRLSign
+subjectKeyIdentifier = hash

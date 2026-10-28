@@ -1,0 +1,15 @@
+[
+  "grafana/alloy:v1.21.2",
+  "grafana/loki:3.6.16",
+  "kiwigrid/k8s-sidecar:2.5.0",
+  "nginxinc/nginx-unprivileged:1.29-alpine",
+  "postgres:18-bookworm",
+  "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.17.0",
+  "registry.k8s.io/sig-storage/csi-provisioner:v6.3.0",
+  "registry.k8s.io/sig-storage/csi-resizer:v2.2.1",
+  "registry.k8s.io/sig-storage/csi-snapshotter:v8.6.0",
+  "registry.k8s.io/sig-storage/livenessprobe:v2.19.0",
+  "registry.k8s.io/sig-storage/nfsplugin:v4.13.6",
+  "velero/velero-plugin-for-aws:v1.14.0",
+  "velero/velero:v1.18.2"
+]

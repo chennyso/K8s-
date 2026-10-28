@@ -1,0 +1,35 @@
+[[runners]]
+  [runners.feature_flags]
+    FF_USE_LEGACY_KUBERNETES_EXECUTION_STRATEGY = true
+  [runners.kubernetes]
+    namespace = "ci"
+    image = "192.168.204.1:15000/learning/tasks:1.0.0"
+    helper_image = "registry.gitlab.com/gitlab-org/gitlab-runner/gitlab-runner-helper:x86_64-v19.4.0"
+    pull_policy = "if-not-present"
+    image_pull_secrets = ["registry"]
+    cpu_request = "100m"
+    cpu_limit = "2"
+    memory_request = "128Mi"
+    memory_limit = "1Gi"
+    helper_cpu_limit = "500m"
+    helper_memory_limit = "256Mi"
+    service_account = "ci-job"
+    [runners.kubernetes.pod_security_context]
+      fs_group = 1000
+    [runners.kubernetes.build_container_security_context]
+      run_as_user = 1000
+      run_as_group = 1000
+      [runners.kubernetes.build_container_security_context.seccomp_profile]
+        type = "Unconfined"
+      [runners.kubernetes.build_container_security_context.app_armor_profile]
+        type = "Unconfined"
+    [[runners.kubernetes.volumes.config_map]]
+      name = "buildkit-config"
+      mount_path = "/etc/buildkit"
+    [[runners.kubernetes.volumes.secret]]
+      name = "buildkit-auth"
+      mount_path = "/home/user/.docker"
+    [[runners.kubernetes.volumes.empty_dir]]
+      name = "runtime"
+      mount_path = "/run/user/1000"
+      medium = "Memory"

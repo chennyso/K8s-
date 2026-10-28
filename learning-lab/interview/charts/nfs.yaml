@@ -1,0 +1,12 @@
+controller:
+  replicas: 1
+storageClass:
+  create: true
+  name: interview-nfs
+  parameters:
+    server: 192.168.204.1
+    share: /var/lib/interview-lab/nfs
+  reclaimPolicy: Retain
+  volumeBindingMode: Immediate
+  mountOptions:
+    - nfsvers=4.1

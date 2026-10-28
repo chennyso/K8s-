@@ -1,0 +1,26 @@
+apiVersion: batch/v1
+kind: Job
+metadata: {name: login-load, namespace: interview-app}
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      imagePullSecrets: [{name: registry}]
+      containers:
+        - name: load
+          image: 192.168.204.1:15000/learning/tasks:1.0.0
+          command: [python, /scripts/load-application.py]
+          env:
+            - name: LEARNING_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: application, key: ADMIN_PASSWORD}
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {cpu: 500m, memory: 192Mi}
+          volumeMounts: [{name: scripts, mountPath: /scripts}]
+      volumes:
+        - name: scripts
+          configMap: {name: application-load}

@@ -1,0 +1,2 @@
+[registry."192.168.204.1:15000"]
+  ca = ["/etc/buildkit/ca.crt"]

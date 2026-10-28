@@ -1,0 +1,74 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: pod-lab-local
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pod-lab-notebook
+spec:
+  capacity: {storage: 512Mi}
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: pod-lab-local
+  local: {path: /var/lib/pod-lab/notebook}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: [rke2-worker-3]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: notebook
+  namespace: pod-lab
+spec:
+  serviceName: notebook
+  replicas: 1
+  selector:
+    matchLabels: {app: notebook}
+  template:
+    metadata:
+      labels: {app: notebook}
+    spec:
+      automountServiceAccountToken: false
+      securityContext: {runAsUser: 1000, runAsGroup: 1000, fsGroup: 1000}
+      containers:
+        - name: notebook
+          image: busybox:1.37.0
+          imagePullPolicy: Never
+          command: [httpd, -f, -v, -p, "8080", -h, /data]
+          ports:
+            - {name: http, containerPort: 8080}
+          readinessProbe:
+            tcpSocket: {port: http}
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 100m, memory: 64Mi}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+  volumeClaimTemplates:
+    - metadata: {name: data}
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: pod-lab-local
+        resources:
+          requests: {storage: 512Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notebook
+  namespace: pod-lab
+spec:
+  clusterIP: None
+  selector: {app: notebook}
+  ports:
+    - {name: http, port: 8080, targetPort: http}

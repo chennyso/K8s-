@@ -1,0 +1,14 @@
+work/
+.venv/
+**/secrets/
+**/__pycache__/
+*.pyc
+*.log
+**/ssh-config
+**/user-data
+**/id_ed25519*
+**/certs/
+**/kubeconfig*
+**/wheels/
+**/image-bundle-*/
+**/*images.tar.gz

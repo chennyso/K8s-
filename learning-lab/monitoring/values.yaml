@@ -1,0 +1,88 @@
+fullnameOverride: monitoring
+grafana:
+  admin:
+    existingSecret: grafana-admin
+  persistence:
+    enabled: true
+    existingClaim: grafana-data
+  initChownData:
+    enabled: false
+  service:
+    type: NodePort
+    nodePort: 30300
+  resources:
+    requests: {cpu: 100m, memory: 128Mi}
+    limits: {cpu: 500m, memory: 512Mi}
+  sidecar:
+    dashboards:
+      folder: /var/lib/grafana/dashboards
+    resources:
+      requests: {cpu: 20m, memory: 64Mi}
+      limits: {cpu: 200m, memory: 192Mi}
+  defaultDashboardsTimezone: Asia/Shanghai
+prometheus:
+  service:
+    type: NodePort
+    nodePort: 30900
+  prometheusSpec:
+    replicas: 1
+    retention: 3d
+    retentionSize: 3GB
+    scrapeInterval: 30s
+    evaluationInterval: 30s
+    resources:
+      requests: {cpu: 200m, memory: 512Mi}
+      limits: {cpu: "1", memory: 1536Mi}
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: monitoring-local
+          accessModes: [ReadWriteOnce]
+          selector:
+            matchLabels: {monitoring-volume: prometheus}
+          resources:
+            requests: {storage: 5Gi}
+alertmanager:
+  service:
+    type: NodePort
+    nodePort: 30903
+  alertmanagerSpec:
+    replicas: 1
+    resources:
+      requests: {cpu: 50m, memory: 64Mi}
+      limits: {cpu: 300m, memory: 256Mi}
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: monitoring-local
+          accessModes: [ReadWriteOnce]
+          selector:
+            matchLabels: {monitoring-volume: alertmanager}
+          resources:
+            requests: {storage: 1Gi}
+prometheusOperator:
+  resources:
+    requests: {cpu: 100m, memory: 128Mi}
+    limits: {cpu: 500m, memory: 384Mi}
+kube-state-metrics:
+  resources:
+    requests: {cpu: 50m, memory: 64Mi}
+    limits: {cpu: 300m, memory: 256Mi}
+prometheus-node-exporter:
+  resources:
+    requests: {cpu: 20m, memory: 32Mi}
+    limits: {cpu: 200m, memory: 128Mi}
+kubelet:
+  serviceMonitor:
+    tlsConfig:
+      insecureSkipVerify: false
+kubeControllerManager:
+  serviceMonitor:
+    tlsConfig:
+      insecureSkipVerify: false
+      serverName: localhost
+kubeScheduler:
+  serviceMonitor:
+    tlsConfig:
+      insecureSkipVerify: false
+      serverName: localhost

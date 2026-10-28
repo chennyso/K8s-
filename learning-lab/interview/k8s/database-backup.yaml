@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: Namespace
+metadata: {name: backup-lab}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: {name: database-dumps, namespace: backup-lab}
+spec:
+  accessModes: [ReadWriteMany]
+  storageClassName: interview-nfs
+  resources:
+    requests: {storage: 1Gi}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dump-reader
+  namespace: backup-lab
+  annotations: {backup.velero.io/backup-volumes: data}
+spec:
+  automountServiceAccountToken: false
+  containers:
+    - name: reader
+      image: busybox:1.37.0
+      imagePullPolicy: Never
+      command: [sleep, infinity]
+      resources:
+        requests: {cpu: 5m, memory: 8Mi}
+        limits: {cpu: 100m, memory: 32Mi}
+      volumeMounts: [{name: data, mountPath: /backup}]
+  volumes:
+    - name: data
+      persistentVolumeClaim: {claimName: database-dumps}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata: {name: database-backup, namespace: backup-lab}
+spec:
+  schedule: "0 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels: {app: database-backup}
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          containers:
+            - name: dump
+              image: postgres:18-bookworm
+              command: [sh, -ec]
+              args:
+                - pg_dump -h postgres.interview-app.svc.cluster.local -U learning -d learning -Fc -f /backup/learning.dump; date -u +%FT%TZ > /backup/created-at.txt
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef: {name: database-password, key: password}
+              resources:
+                requests: {cpu: 50m, memory: 64Mi}
+                limits: {cpu: 500m, memory: 256Mi}
+              volumeMounts: [{name: data, mountPath: /backup}]
+          volumes:
+            - name: data
+              persistentVolumeClaim: {claimName: database-dumps}
+---
+apiVersion: velero.io/v1
+kind: Schedule
+metadata: {name: learning-dumps, namespace: velero}
+spec:
+  schedule: "30 */6 * * *"
+  template:
+    includedNamespaces: [backup-lab]
+    defaultVolumesToFsBackup: true
+    snapshotVolumes: false
+    ttl: 168h

@@ -1,0 +1,8 @@
+apiVersion: velero.io/v1
+kind: Restore
+metadata: {name: learning-drill-restore, namespace: velero}
+spec:
+  backupName: learning-drill
+  namespaceMapping: {backup-lab: backup-restored}
+  restorePVs: true
+  excludedResources: [cronjobs.batch]

@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: client-allowed
+  namespace: pod-lab
+  labels: {access: allowed}
+spec:
+  automountServiceAccountToken: false
+  containers:
+    - name: tools
+      image: busybox:1.37.0
+      imagePullPolicy: Never
+      command: [sleep, infinity]
+      resources:
+        requests: {cpu: 5m, memory: 8Mi}
+        limits: {cpu: 100m, memory: 32Mi}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: client-denied
+  namespace: pod-lab
+spec:
+  automountServiceAccountToken: false
+  containers:
+    - name: tools
+      image: busybox:1.37.0
+      imagePullPolicy: Never
+      command: [sleep, infinity]
+      resources:
+        requests: {cpu: 5m, memory: 8Mi}
+        limits: {cpu: 100m, memory: 32Mi}

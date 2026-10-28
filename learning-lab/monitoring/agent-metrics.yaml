@@ -1,0 +1,2 @@
+kube-proxy-arg:
+  - metrics-bind-address=0.0.0.0:10249

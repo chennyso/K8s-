@@ -1,0 +1,11 @@
+#cloud-config
+users:
+  - name: ubuntu
+    groups: [adm, sudo]
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    lock_passwd: true
+    ssh_authorized_keys: []
+ssh_pwauth: false
+disable_root: true
+timezone: Asia/Shanghai

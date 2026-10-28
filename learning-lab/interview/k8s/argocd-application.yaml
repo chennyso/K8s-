@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: learning-tasks
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: http://192.168.204.1:18080/root/learning-tasks.git
+    targetRevision: main
+    path: gitops
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: interview-app
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers: [/spec/replicas]
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions: [RespectIgnoreDifferences=true]

@@ -1,0 +1,17 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: learning-application
+  namespace: monitoring
+  labels: {release: monitoring}
+spec:
+  groups:
+    - name: learning-application
+      rules:
+        - alert: LearningAppUnavailable
+          expr: kube_deployment_status_replicas_available{namespace="interview-app",deployment="tasks"} == 0
+          for: 15s
+          labels: {severity: warning, project: learning}
+          annotations:
+            summary: 学习任务应用没有可用副本
+            description: 检查应用 readiness、PostgreSQL 和 EndpointSlice。

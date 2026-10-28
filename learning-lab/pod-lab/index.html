@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>204 集群 Pod 进程实验</title>
+<body>
+<h1>Pod 进程实验</h1>
+<p>每两秒读取一次真实 Pod 状态。Service 有两个后端，连续请求可能到达不同的 Pod。</p>
+<button id="refresh">读取当前状态</button>
+<pre id="status">正在读取状态</pre>
+<h2>操作入口</h2>
+<p>进入 inspector 容器查看进程，通过 localhost 访问 server，通过 /data 查看共享数据。具体命令见随附的实操手册。</p>
+<p><a href="/status.json">原始状态 JSON</a> · <a href="/metrics.txt">Prometheus 指标</a></p>
+<script>
+async function refresh() {
+  const response = await fetch('/status.json', {cache: 'no-store'});
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  document.getElementById('status').textContent = JSON.stringify(await response.json(), null, 2);
+}
+document.getElementById('refresh').addEventListener('click', refresh);
+refresh();
+setInterval(refresh, 2000);
+</script>
+</body>
+</html>

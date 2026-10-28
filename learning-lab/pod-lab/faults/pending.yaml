@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fault-pending
+  namespace: pod-lab
+spec:
+  automountServiceAccountToken: false
+  nodeSelector:
+    kubernetes.io/hostname: pod-lab-missing-node
+  containers:
+    - name: waiting-process
+      image: busybox:1.37.0
+      imagePullPolicy: Never
+      command: [sleep, infinity]
+      resources:
+        requests: {cpu: 5m, memory: 8Mi}
+        limits: {cpu: 100m, memory: 32Mi}

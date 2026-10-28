@@ -1,0 +1,1946 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="四节点 RKE2 Kubernetes 实操教程：虚拟机、Pod、监控、任务系统、发布和备份恢复。">
+<title>从零搭建 Kubernetes 与项目实战</title>
+<style>
+:root{color-scheme:light;--ink:#173047;--muted:#526575;--line:#d6e0e7;--accent:#075d83}*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:20px}body{margin:0;color:var(--ink);background:#f3f6f8;font:17px/1.85 system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}aside{position:fixed;inset:0 auto 0 0;width:290px;padding:28px 22px;overflow:auto;border-right:1px solid var(--line);background:white}aside strong{display:block;font-size:22px;margin-bottom:18px}aside a{display:block;padding:9px 0;font-size:14px;line-height:1.6}a{color:var(--accent);text-underline-offset:4px}main{max-width:1260px;margin-left:290px;padding:36px 5vw 90px}.intro,.chapter{background:white;padding:32px 40px;margin-bottom:28px;border:1px solid var(--line);border-radius:12px}.intro h1{font-size:32px}.intro p{color:var(--muted)}h1,h2,h3{line-height:1.5}h1{font-size:29px}h2{font-size:24px;margin-top:48px;border-bottom:1px solid var(--line);padding-bottom:12px}h3{font-size:20px;margin-top:30px}pre{overflow:auto;background:#102534;color:#e2edf5;padding:20px;border-radius:8px;font-size:14px;line-height:1.7}code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere}p code,li code,td code{font-size:.88em;background:#edf3f6;padding:2px 5px;border-radius:3px}table{display:block;overflow:auto;width:100%;border-collapse:collapse;font-size:15px;margin:24px 0}th,td{border:1px solid var(--line);padding:11px 14px;min-width:110px;text-align:left}th{background:#edf3f6}button,input{font:inherit}button{background:var(--accent);color:white;border:0;border-radius:5px;cursor:pointer;padding:7px 12px}.copy{display:block;margin:0 0 8px auto;font-size:12px}input{width:100%;padding:8px;border:1px solid var(--line);border-radius:5px;font-size:14px}.mermaid{background:#f8fbfd;color:var(--ink);text-align:center}.mermaid svg{max-width:100%!important;height:auto}#search-status{font-size:13px;color:var(--muted)}.chapter[hidden]{display:none}.notice{border-left:4px solid var(--accent);padding-left:16px}@media(max-width:900px){aside{position:static;width:auto;max-height:none}main{margin:0;padding:18px}.intro,.chapter{padding:20px}h1{font-size:25px}}@media print{aside,button,.copy{display:none!important}main{margin:0;padding:0;max-width:none}.intro,.chapter{border:0;padding:0;break-before:page}pre{white-space:pre-wrap;background:#f5f5f5;color:#111}table{display:table}a{color:inherit}}
+</style>
+</head>
+<body>
+<aside><strong>Kubernetes 项目实战</strong><label for="search">搜索章节</label><input id="search" type="search" placeholder="例如：探针、备份、RKE2"><p id="search-status" aria-live="polite"></p><nav><a href="#chapter-1">01 Kubernetes入门到项目学习教程</a>
+<a href="#chapter-2">02 从零搭建Kubernetes与项目实战</a>
+<a href="#chapter-3">03 204节点RKE2集群搭建流程</a>
+<a href="#chapter-4">04 204集群监控部署与使用文档</a>
+<a href="#chapter-5">05 Pod项目实操学习手册</a>
+<a href="#chapter-6">06 Kubernetes平台部署与学习流程</a>
+<a href="#chapter-7">07 项目验收与学习任务</a></nav><p><a href="../index.html">Linux 与容器基础教程</a><a href="README.md">源码与公开内容说明</a></p><button id="print">打印教程</button></aside>
+<main><header class="intro"><p>实验环境 · 2026 年 10 月 28 日</p><h1>从零搭建 Kubernetes 与项目实战</h1><p>按照概念理解、集群安装、项目操作、状态观察和故障恢复的顺序学习。七篇配套教程提供命令、配置解释和练习。</p><p class="notice">操作前确认自己的集群和命名空间。本文私有地址描述实验拓扑，复现时修改为自己的网络。故障实验会重启容器、修改副本或停止数据库，请在专用实验环境执行。认证信息由读者自行生成并保存在私有目录。</p></header><section id="chapter-1" class="chapter"><h1 id="chapter-1-0">Kubernetes 入门到项目学习教程</h1>
+<h2 id="chapter-1-1">1．准备学习环境</h2>
+<p>本文参考 tianshu 的《K8s 详细入门教程（基于 Docker 背景）》组织学习顺序。参考文章全文已阅读，地址为 https://www.cnblogs.com/fchhk/p/19406111 。本文的环境、对象名称、命令和项目说明依据本次实际部署编写。</p>
+<p>学习需要理解 Docker 镜像、容器、端口和目录挂载。准备一个可以执行 kubectl 的终端，并解压《Kubernetes项目完整部署源码.tar.gz》。部署步骤阅读同目录《从零搭建Kubernetes与项目实战.md》，虚拟机与集群安装细节阅读《204节点RKE2集群搭建流程.md》。本文解释操作背后的对象关系，并使用已经运行的项目练习。</p>
+<table>
+<thead>
+<tr>
+<th>层次</th>
+<th>当前环境</th>
+<th>需要掌握的内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>物理服务器</td>
+<td>10.100.1.94，204 宿主机</td>
+<td>CPU、内存、磁盘、虚拟化</td>
+</tr>
+<tr>
+<td>虚拟网络</td>
+<td>192.168.204.0/24</td>
+<td>网桥、NAT、DHCP、路由</td>
+</tr>
+<tr>
+<td>控制平面</td>
+<td>192.168.204.11</td>
+<td>API、调度、控制器、etcd</td>
+</tr>
+<tr>
+<td>工作节点</td>
+<td>192.168.204.12～14</td>
+<td>kubelet、containerd、Pod 网络</td>
+</tr>
+<tr>
+<td>Kubernetes</td>
+<td>RKE2 v1.36.5+rke2r1</td>
+<td>资源声明、控制循环、应用运维</td>
+</tr>
+<tr>
+<td>项目</td>
+<td>pod-lab、interview-app</td>
+<td>容器实验、任务系统、发布与恢复</td>
+</tr>
+</tbody>
+</table>
+<p>四台虚拟机每台配置 4 vCPU、4 GiB 内存和 20 GiB 磁盘。全部虚拟机共用同一台物理服务器；物理服务器故障会影响全部节点。当前控制平面只有一个，学习时需要明确这个可用性限制。</p>
+<p>下面命令在配置管理员 kubeconfig 的终端执行。Mac 需要保持集群 API 的 SSH 转发；控制平面可以通过 sudo 获取管理员终端后设置：</p>
+<pre><code class="language-bash">export PATH=/var/lib/rancher/rke2/bin:$PATH
+export KUBECONFIG=/etc/rancher/rke2/rke2.yaml
+kubectl cluster-info
+kubectl get nodes -o wide
+</code></pre>
+<p>检查四个节点的 Ready 状态、节点地址和版本。<code>kubectl</code> 使用 kubeconfig 中的地址、证书和身份访问 API Server；终端工作目录不会决定连接哪个集群。操作之前执行 <code>kubectl config current-context</code>，确认连接对象。</p>
+<h2 id="chapter-1-2">2．从容器运行理解 Kubernetes</h2>
+<p>执行一次容器启动命令，只能描述某个时刻的操作。应用运行期间还需要处理进程退出、节点故障、多个副本、访问入口和版本更新。Kubernetes 保存资源的期望状态，控制器持续检查实际状态，并执行创建、更新等操作。</p>
+<p>当前节点使用 containerd 运行容器。Docker 在宿主机承担镜像构建等工作。镜像需要匹配节点的 linux/amd64 架构，并且节点必须能够取得镜像及认证信息。</p>
+<table>
+<thead>
+<tr>
+<th>概念</th>
+<th>在当前项目中的例子</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>镜像</td>
+<td>learning/tasks:1.0.1</td>
+<td>保存程序、运行环境和依赖</td>
+</tr>
+<tr>
+<td>容器</td>
+<td>server、writer、inspector</td>
+<td>运行具体进程</td>
+</tr>
+<tr>
+<td>Pod</td>
+<td>pod-web 的一个副本</td>
+<td>提供共享网络及声明的卷挂载</td>
+</tr>
+<tr>
+<td>Deployment</td>
+<td>pod-web</td>
+<td>管理副本和滚动更新</td>
+</tr>
+<tr>
+<td>ReplicaSet</td>
+<td>pod-web 对应的副本集合</td>
+<td>维持符合模板的 Pod 数量</td>
+</tr>
+<tr>
+<td>Service</td>
+<td>pod-web</td>
+<td>根据标签关联后端并提供稳定访问地址</td>
+</tr>
+<tr>
+<td>Namespace</td>
+<td>pod-lab</td>
+<td>给资源提供命名范围</td>
+</tr>
+<tr>
+<td>ConfigMap</td>
+<td>项目的脚本及网页配置</td>
+<td>将配置文件提供给容器</td>
+</tr>
+<tr>
+<td>Secret</td>
+<td>数据库密码、仓库认证</td>
+<td>保存需要限制访问的配置</td>
+</tr>
+<tr>
+<td>PVC</td>
+<td>PostgreSQL 数据卷申请</td>
+<td>申请持久化存储</td>
+</tr>
+</tbody>
+</table>
+<p>Namespace 的隔离能力需要 RBAC、配额和网络策略共同配置。Secret 的访问权限需要明确控制，Base64 编码能够还原原文。</p>
+<h2 id="chapter-1-3">3．理解创建应用时发生的事情</h2>
+<pre class="mermaid">sequenceDiagram
+    participant U as kubectl
+    participant A as API Server
+    participant E as etcd
+    participant C as 控制器
+    participant S as Scheduler
+    participant K as kubelet
+    participant R as containerd
+    U-&gt;&gt;A: 提交 Deployment
+    A-&gt;&gt;E: 保存通过校验的资源
+    C-&gt;&gt;A: 创建 ReplicaSet 和 Pod
+    S-&gt;&gt;A: 为未调度 Pod 绑定节点
+    K-&gt;&gt;A: 获取分配到本节点的 Pod
+    K-&gt;&gt;R: 请求创建容器
+    K-&gt;&gt;A: 更新运行与就绪状态
+</pre>
+<p>控制器通过 API Server 观察资源。scheduler 根据 requests、节点条件和调度约束选择节点；kubelet 请求容器运行环境启动进程。网络插件配置 Pod 网络，存储组件准备声明的卷。Pod 的状态可能依次出现 Pending、初始化、Running 等变化。</p>
+<p>Running 表示 Pod 已进入运行阶段，接收业务流量还需要检查 Ready。项目中三个普通容器全部就绪时显示 <code>3/3</code>。查看状态时同时检查 READY、STATUS、RESTARTS 和事件。</p>
+<h2 id="chapter-1-4">4．阅读实际 YAML 文件</h2>
+<p>解压源码后打开 <code>pod-lab/workload.yaml</code> 和 <code>pod-lab/access.yaml</code>，按照以下关系阅读。下面的代码块用于解释字段，完整可部署配置保存在源码文件中。</p>
+<pre><code class="language-yaml">apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pod-web
+  namespace: pod-lab
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: pod-web
+  template:
+    metadata:
+      labels:
+        app: pod-web
+</code></pre>
+<p><code>apiVersion</code> 指定资源 API 组和版本。<code>kind</code> 指定对象类型。<code>metadata.name</code> 和 <code>metadata.namespace</code> 定位对象。<code>spec.replicas</code> 声明数量。<code>selector.matchLabels</code> 必须匹配 Pod 模板标签。<code>template</code> 描述将来创建的 Pod；修改模板通常会触发新的 ReplicaSet 和滚动更新。</p>
+<p>Service 的 selector 同样匹配 Pod 标签。<code>port</code> 是 Service 提供的端口，<code>targetPort</code> 指向容器实际监听端口，<code>nodePort</code> 是 NodePort 类型在节点提供的端口。容器的 <code>containerPort</code> 字段描述端口，程序仍然需要实际监听对应地址。</p>
+<p>使用集群提供的字段说明查阅配置：</p>
+<pre><code class="language-bash">kubectl explain deployment.spec.template.spec
+kubectl explain deployment.spec.template.spec.containers.resources
+kubectl explain service.spec.ports
+kubectl -n pod-lab get deployment pod-web -o yaml
+kubectl -n pod-lab get service pod-web -o yaml
+</code></pre>
+<p>输出中 <code>spec</code> 是声明的配置，<code>status</code> 是系统报告的状态。比较两者，可以判断控制器是否已经完成预期操作。</p>
+<h2 id="chapter-1-5">5．部署和访问 Pod 项目</h2>
+<p>首次搭建按照部署手册准备节点目录与监控依赖，然后进入源码 <code>pod-lab/</code> 执行 <code>bash deploy.sh</code>。已有环境直接开始下面检查：</p>
+<pre><code class="language-bash">kubectl -n pod-lab get deployment,replicaset,pod,service -o wide
+kubectl -n pod-lab rollout status deployment/pod-web --timeout=180s
+kubectl -n pod-lab get endpointslice -l kubernetes.io/service-name=pod-web
+kubectl -n pod-lab port-forward service/pod-web 18084:8080
+</code></pre>
+<p>保持最后一个命令运行，在 Mac 浏览器访问 <code>http://127.0.0.1:18084</code>。网页显示计数器和 Pod 状态。另一个终端可以执行：</p>
+<pre><code class="language-bash">curl --fail http://127.0.0.1:18084/status.json
+</code></pre>
+<p>本机请求经过 kubectl 与 API Server 到达选中的 Pod。port-forward 选中的 Pod 被删除后，需要重新建立转发。使用这个入口验证页面可达，集群内部的 Service 转发另外通过客户端 Pod 验证：</p>
+<pre><code class="language-bash">kubectl -n pod-lab exec client-allowed -- nslookup pod-web.pod-lab.svc.cluster.local
+kubectl -n pod-lab exec client-allowed -- wget -qO- -T 5 http://pod-web:8080/status.json
+</code></pre>
+<p>DNS 返回 Service 地址，Service 的后端由匹配标签及就绪条件的 EndpointSlice 描述。测试多副本时观察实际响应中的 Pod 信息和端点列表；单个长期连接可能持续使用同一个后端。</p>
+<h2 id="chapter-1-6">6．观察容器、进程和日志</h2>
+<pre><code class="language-bash">POD=$(kubectl -n pod-lab get pod -l app=pod-web -o jsonpath='{.items[0].metadata.name}')
+kubectl -n pod-lab describe pod "$POD"
+kubectl -n pod-lab logs "$POD" -c writer --tail=20
+kubectl -n pod-lab exec "$POD" -c inspector -- ps
+kubectl -n pod-lab exec "$POD" -c inspector -- wget -qO- http://127.0.0.1:8080/status.json
+</code></pre>
+<p>server 提供 HTTP 服务，writer 更新共享文件，inspector 提供检查工具。容器共享 Pod 的网络命名空间，所以 localhost 可以访问 server。每个容器仍然有各自的文件系统；通过共同挂载 emptyDir 才能共享 <code>/data</code> 文件。</p>
+<p>本项目设置 <code>shareProcessNamespace: true</code>，inspector 可以查看其他容器的进程。阅读进程列表后，在《Pod项目实操学习手册》中执行终止 writer 的实验，比较 Pod UID、containerID 和 restartCount。容器重启时 Pod UID 保持一致；Pod 重建时 UID 改变。</p>
+<h2 id="chapter-1-7">7．理解探针、自愈和数据生命周期</h2>
+<table>
+<thead>
+<tr>
+<th>机制</th>
+<th>本项目的操作</th>
+<th>应观察的结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>readinessProbe</td>
+<td>删除 <code>/data/ready</code> 后恢复文件</td>
+<td>Pod 暂停接收 Service 新请求，再恢复就绪</td>
+</tr>
+<tr>
+<td>livenessProbe</td>
+<td>删除 <code>/data/live</code></td>
+<td>server 容器重新启动</td>
+</tr>
+<tr>
+<td>Deployment 副本维护</td>
+<td>删除一个 pod-web Pod</td>
+<td>ReplicaSet 创建替代 Pod</td>
+</tr>
+<tr>
+<td>emptyDir</td>
+<td>在 Pod 中创建标记后重建 Pod</td>
+<td>新 Pod 使用新目录</td>
+</tr>
+<tr>
+<td>PVC</td>
+<td>notebook 写入笔记后重建 Pod</td>
+<td>笔记内容保留</td>
+</tr>
+</tbody>
+</table>
+<p>startupProbe 在启动期间保护慢启动程序；readinessProbe 决定就绪状态；livenessProbe 失败达到阈值后触发容器重启。任务系统的 readiness 检查数据库连接，liveness 检查应用进程响应。数据库短时中断期间，应用暂时退出就绪状态，避免无效的重复重启。</p>
+<p>练习删除前记录名称和 UID：</p>
+<pre><code class="language-bash">kubectl -n pod-lab get pods -l app=pod-web -o custom-columns=NAME:.metadata.name,UID:.metadata.uid,NODE:.spec.nodeName
+kubectl -n pod-lab delete pod "$POD"
+kubectl -n pod-lab rollout status deployment/pod-web --timeout=180s
+kubectl -n pod-lab get pods -l app=pod-web -o wide
+</code></pre>
+<p>随后重新取得 <code>POD</code> 变量。自动重建能恢复声明的副本，应用的数据完整性需要存储、事务和备份配合。Local PV 绑定具体节点，NFS 数据可由多个节点访问；NFS 服务也运行在同一物理宿主机，仍然存在共同故障范围。</p>
+<h2 id="chapter-1-8">8．从 Pod 实验进入任务系统</h2>
+<p>任务系统包含 HTML/JavaScript 页面、FastAPI 后端和 PostgreSQL。用户登录后执行任务创建、读取、修改和删除，数据写入数据库 PVC。页面入口为 <code>http://127.0.0.1:18083</code>，可以通过下面命令建立转发：</p>
+<pre><code class="language-bash">kubectl -n interview-app get deployment,pod,service,pvc,hpa,pdb
+kubectl -n interview-app port-forward service/tasks 18083:8080
+</code></pre>
+<p>使用私有凭据文件中的学习账号登录。创建一条自己能够辨认的任务，修改完成状态，刷新页面确认保存。打开后端日志，核对请求方法、路径、状态码及处理时间。删除一个应用 Pod 并等待副本恢复，再确认任务仍然存在。</p>
+<p>正式验收使用源码 <code>interview/verify-application.py</code> 执行真实接口操作，包含认证与数据检查。执行脚本之前依照部署手册创建 Python 环境、设置 KUBECONFIG 并保持页面转发。</p>
+<p>资源 requests 参与调度和 CPU HPA 利用率计算；limits 限制资源使用。CPU 达到限制可能出现节流，内存超过限制可能触发 OOM。当前 HPA 将副本数量控制在 2～4，CPU 目标值为 requests 的 50%。HPA 调整副本后，Argo CD 配置需要允许这个字段由 HPA 管理。</p>
+<h2 id="chapter-1-9">9．串联发布、监控、日志和备份</h2>
+<pre class="mermaid">flowchart LR
+    Source[GitLab 源码] --&gt; Runner[Runner 创建 CI Pod]
+    Runner --&gt; Build[BuildKit 构建镜像]
+    Build --&gt; Registry[TLS 镜像仓库]
+    Git[Git 部署配置] --&gt; Argo[Argo CD]
+    Argo --&gt; Deployment[tasks Deployment]
+    Registry --&gt; Deployment
+    Deployment --&gt; Database[PostgreSQL PVC]
+    Deployment --&gt; Metrics[Prometheus 与 Grafana]
+    Deployment --&gt; Logs[Alloy 与 Loki]
+    Database --&gt; Dump[pg_dump 文件]
+    Dump --&gt; Backup[Velero 与 S3]
+</pre>
+<p>GitLab 的 integration Job 对已经运行的服务执行真实接口测试，build Job 构建并推送镜像。Argo CD 读取 Git 中的部署清单，使集群配置与提交保持一致。学习时分别查看流水线提交、镜像标签、Deployment 镜像和 Argo CD revision，理解这些对象如何关联。</p>
+<p>Prometheus 按 ServiceMonitor 配置采集指标，Grafana 查询并展示指标。Pod 项目的指标路径为 <code>/metrics.txt</code>，任务系统使用 <code>/metrics</code>。在 Prometheus 查询 <code>pod_lab_heartbeats_total</code>，观察两个 Pod 对应的时间序列。Alloy 采集容器日志并写入 Loki，在 Grafana 按 namespace、pod 和 container 查询。</p>
+<p>备份采用 PostgreSQL 逻辑导出、文件备份和 Kubernetes 对象备份。恢复验证创建新的命名空间、不同的 PV 和新的数据库数据目录，再导入文件并查询原有记录。备份任务完成、恢复任务完成、业务数据可查询，需要分别检查。</p>
+<h2 id="chapter-1-10">10．根据证据定位故障</h2>
+<p>先确认命名空间和对象，再查看状态、事件与日志：</p>
+<pre><code class="language-bash">kubectl -n interview-app get pods -o wide
+kubectl -n interview-app get events --sort-by=.lastTimestamp
+kubectl -n interview-app describe deployment tasks
+kubectl -n interview-app get endpointslice
+kubectl -n interview-app logs deployment/tasks --tail=50
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>检查顺序</th>
+<th>原因定位依据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pending</td>
+<td>Pod 事件、requests、节点条件、PVC</td>
+<td>FailedScheduling 或卷绑定信息</td>
+</tr>
+<tr>
+<td>ImagePullBackOff</td>
+<td>镜像地址、仓库连接、CA、认证</td>
+<td>拉取失败事件中的具体错误</td>
+</tr>
+<tr>
+<td>CrashLoopBackOff</td>
+<td>previous 日志、退出原因、配置</td>
+<td>进程退出码与最后一次状态</td>
+</tr>
+<tr>
+<td>OOMKilled</td>
+<td>内存 limits、使用量、terminated.reason</td>
+<td>内存限制与 OOM 状态</td>
+</tr>
+<tr>
+<td>Running 但网页失败</td>
+<td>Ready、Service selector、EndpointSlice、网络策略</td>
+<td>后端端点及实际连接结果</td>
+</tr>
+<tr>
+<td>数据库恢复后数据缺少</td>
+<td>PVC、PV、挂载目录、数据库连接目标</td>
+<td>数据位置与实际查询结果</td>
+</tr>
+</tbody>
+</table>
+<p>故障演练按顺序执行，完成一项并验证恢复后再执行下一项：Pod 三类故障、探针失败、错误镜像发布、数据库中断、HPA 负载、备份恢复。源码提供对应脚本，详细命令见《Pod项目实操学习手册》和《Kubernetes平台部署与学习流程》。PDB 演练只驱逐 <code>app=pod-web</code> 的项目 Pod，结束后恢复节点调度。</p>
+<h2 id="chapter-1-11">11．完成学习记录与面试练习</h2>
+<p>每个实验记录执行位置、对象名称、修改字段、状态变化、日志证据和恢复验证。用自己的语言回答下面问题，再执行对应命令证明回答。</p>
+<ol>
+<li>删除容器进程与删除 Pod，分别由哪个组件处理？比较 UID 和 restartCount。</li>
+<li>Deployment 为什么需要标签选择器？展示 Pod 模板与 ReplicaSet 的关系。</li>
+<li>Service 地址稳定时后端为什么可以变化？展示 EndpointSlice。</li>
+<li>readiness 失败后为何能够避免请求进入异常副本？展示端点就绪条件。</li>
+<li>emptyDir、Local PV 和 NFS 分别在什么情况下保留数据？展示实际挂载位置。</li>
+<li>HPA 使用 CPU requests 的方式是什么？结合 requests 计算目标使用量。</li>
+<li>PDB 能够约束哪些中断？解释直接删除 Pod 和节点断电的行为。</li>
+<li>Argo CD 如何处理手工修改？查看同步状态和 Git 提交。</li>
+<li>数据库不可达时为何仍然保持应用进程运行？检查探针配置与重启次数。</li>
+<li>怎样证明备份能够恢复业务？展示新 PV、文件摘要和恢复后的查询。</li>
+</ol>
+<p>本次验收材料保存在源码包 <code>evidence/</code>。最终记录包含四个 Ready 节点、65 个活动 Pod 全部就绪、36 个 Prometheus 采集目标 UP、CI 成功、Argo CD Synced/Healthy，以及实际故障和恢复结果。数量属于验收时刻的快照；后续学习操作会改变实时数量，应以当前状态及对应证据判断。</p></section>
+<section id="chapter-2" class="chapter"><h1 id="chapter-2-0">从零搭建 Kubernetes 与项目实战</h1>
+<p>学习概念、理解 YAML 和逐项练习时，先阅读同目录《Kubernetes入门到项目学习教程.md》。该教程参考《K8s 详细入门教程（基于 Docker 背景）》的讲解顺序，结合本环境解释资源关系、操作结果及排查方法。本文件提供从虚拟机到项目部署的执行顺序，配套专题文档提供具体配置和实验细节。</p>
+<h2 id="chapter-2-1">01：准备终端、网络和安装目录</h2>
+<p>操作位置：Mac。需要 NetBird、SSH、kubectl、Docker、Python 3.11 及以上版本。镜像分发工具使用 Skopeo。解压部署源码包后，目录包括 <code>rke2-lab/</code>、<code>monitoring/</code>、<code>pod-lab/</code>、<code>interview/</code>。<code>tools/helm</code> 为本次使用的 Helm 3.19.0，适用于当前 Mac 的 arm64 架构。</p>
+<p>在源码包根目录执行：</p>
+<pre><code class="language-bash">export PATH="$PWD/tools:$PATH"
+helm version --short
+</code></pre>
+<p>先按《204节点RKE2集群搭建流程》建立 SOCKS 和跳板连接。SSH 密码在终端交互输入。操作之前确认当前主机：</p>
+<pre><code class="language-bash">hostname
+whoami
+pwd
+</code></pre>
+<p>操作位置分工：</p>
+<table>
+<thead>
+<tr>
+<th>位置</th>
+<th>执行的工作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mac</td>
+<td>准备源码、下载 amd64 镜像、限速传输、打开学习页面</td>
+</tr>
+<tr>
+<td>91 跳板机</td>
+<td>连接 94，转发 SSH 和管理页面连接</td>
+</tr>
+<tr>
+<td>94 宿主机</td>
+<td>创建虚拟机、管理 libvirt、运行 NFS 和独立基础服务</td>
+</tr>
+<tr>
+<td>server-1</td>
+<td>管理 Kubernetes，执行 kubectl 与 Helm</td>
+</tr>
+<tr>
+<td>Pod 容器</td>
+<td>查看业务进程、日志、网络与数据库状态</td>
+</tr>
+</tbody>
+</table>
+<p>命令中 <code>192.168.204.1</code> 表示 94 宿主机的虚拟网桥地址。浏览器的 <code>127.0.0.1</code> 表示当前 Mac，二者通过转发连接起来。</p>
+<h2 id="chapter-2-2">02：创建 Ubuntu 虚拟机</h2>
+<p>按《204节点RKE2集群搭建流程》的顺序完成宿主机依赖、Ubuntu 镜像校验、SSH 密钥、cloud-init 和四台虚拟机创建。源码中的 <code>rke2-lab/network.xml</code>、<code>user-data</code>、<code>provision.sh</code> 和四份 meta-data 是实际使用的配置。</p>
+<p>在 94 宿主机验证：</p>
+<pre><code class="language-bash">virsh list --all
+virsh net-dhcp-leases rke2-lab
+virsh dominfo rke2-server-1
+ssh -i /var/lib/rke2-lab/id_ed25519 ubuntu@192.168.204.11 hostname
+</code></pre>
+<p>需要理解的原理：libvirt 创建网桥和 NAT 网络；DHCP 根据固定 MAC 分配地址；cloud-init 首次启动时配置用户和 SSH 公钥；qcow2 提供虚拟磁盘文件。虚拟机的 4 GiB 内存是节点容量，Pod requests 和 limits 在这个容量范围内发挥作用。</p>
+<h2 id="chapter-2-3">03：安装 RKE2 并验证集群网络</h2>
+<p>同一版本的 RKE2 二进制、镜像包和校验文件必须配套使用。先安装 server，再让 agent 使用加入令牌访问 server 的 9345 端口。</p>
+<p>在 server-1 执行：</p>
+<pre><code class="language-bash">sudo -i
+export PATH=/var/lib/rancher/rke2/bin:$PATH
+export KUBECONFIG=/etc/rancher/rke2/rke2.yaml
+kubectl get --raw='/readyz?verbose'
+kubectl get nodes -o wide
+kubectl get pods -A
+kubectl top nodes
+</code></pre>
+<p>四个节点均应为 Ready。随后执行源码中的网络验收脚本，检查 DNS、Service 和跨节点 Pod 访问。现有 <code>cluster-validation</code> 命名空间保留网络测试工作负载。</p>
+<p>需要理解的原理：API Server 接收资源请求；etcd 保存集群状态；scheduler 为未调度 Pod 选择节点；kubelet 管理容器；containerd 运行容器；Canal 提供 Pod 网络和网络策略；CoreDNS 解析 Service 名称；Service 与 EndpointSlice 关联后端 Pod。</p>
+<p>Mac 进入源码包的 <code>interview/</code>，在一个独立终端保持以下转发连接运行。执行前确认这些本机端口没有被其他转发进程占用：</p>
+<pre><code class="language-bash">ssh -F ssh-config -o ExitOnForwardFailure=yes \
+  -L 127.0.0.1:16443:127.0.0.1:16443 \
+  -L 127.0.0.1:18080:127.0.0.1:38080 \
+  -L 127.0.0.1:18333:127.0.0.1:38333 \
+  -L 127.0.0.1:18443:127.0.0.1:38443 \
+  lab-91 \
+  'ssh -N -o ExitOnForwardFailure=yes -L 127.0.0.1:16443:192.168.204.11:6443 -L 127.0.0.1:38080:192.168.204.1:18080 -L 127.0.0.1:38333:192.168.204.1:18333 -L 127.0.0.1:38443:192.168.204.12:443 root@10.100.1.94'
+</code></pre>
+<p>Mac 的另一个终端在 <code>interview/</code> 执行，安全地取回 kubeconfig：</p>
+<pre><code class="language-bash">mkdir -p secrets
+chmod 700 secrets
+ssh -F ssh-config lab-91 \
+  'ssh root@10.100.1.94 "ssh -i /var/lib/rke2-lab/id_ed25519 ubuntu@192.168.204.11 sudo cat /etc/rancher/rke2/rke2.yaml"' \
+  &gt; secrets/kubeconfig
+chmod 600 secrets/kubeconfig
+nano secrets/kubeconfig
+</code></pre>
+<p>使用编辑器把 kubeconfig 的 <code>server</code> 修改为 <code>https://127.0.0.1:16443</code>，保存后执行：</p>
+<pre><code class="language-bash">export KUBECONFIG="$PWD/secrets/kubeconfig"
+kubectl get nodes
+</code></pre>
+<p>后续 Mac 终端中的 kubectl、Helm 和 Python 验收脚本都使用这个 KUBECONFIG。</p>
+<h2 id="chapter-2-4">04：建立监控和基础检查习惯</h2>
+<p>按《204集群监控部署与使用文档》安装 kube-prometheus-stack、持久卷和管理入口。每次完成一项部署，都执行以下检查：</p>
+<pre><code class="language-bash">kubectl get pods -A
+kubectl get events -A --sort-by=.lastTimestamp
+kubectl top nodes
+kubectl get pvc -A
+</code></pre>
+<p>Grafana 查看资源变化，Prometheus 查看采集目标和指标，Alertmanager 查看告警分组与处理状态。节点指标、Kubernetes 对象状态、应用指标分别来自 node-exporter、kube-state-metrics 和应用 <code>/metrics</code>。</p>
+<h2 id="chapter-2-5">05：运行 Pod 进程实验</h2>
+<p>进入 <code>pod-lab/</code>，设置管理员 kubeconfig 后执行：</p>
+<pre><code class="language-bash">bash deploy.sh
+kubectl apply -f notebook.yaml
+bash verify.sh
+bash fault-drills.sh
+</code></pre>
+<p>Local PV 需要在 worker-3 上预先创建 <code>/var/lib/pod-lab/notebook</code>，所有者为 1000:1000，权限为 2770。<code>notebook.yaml</code> 明确设置了该节点的亲和性。</p>
+<p>按照《Pod项目实操学习手册》完成十组实验。自动验收会产生真实进程退出、探针失败、Pod 重建和调度故障；脚本结束时会恢复副本数量并清理故障 Pod。</p>
+<h2 id="chapter-2-6">06：安装存储、证书、发布和日志组件</h2>
+<p>操作位置：Mac，已经通过 SSH 转发连接集群 API。进入 <code>interview/</code>。源码包包含固定版本的 chart 和对应 values。</p>
+<p>先把宿主机安装脚本复制到 94：</p>
+<pre><code class="language-bash">ssh -F ssh-config lab-91 \
+  'mkdir -p /var/lib/interview-lab/host; ssh root@10.100.1.94 mkdir -p /var/lib/interview-lab/host'
+rsync -a --bwlimit=1024 -e 'ssh -F ssh-config' \
+  host/ lab-91:/var/lib/interview-lab/host/
+ssh -F ssh-config lab-91 \
+  'rsync -a /var/lib/interview-lab/host/ root@10.100.1.94:/var/lib/interview-lab/host/'
+</code></pre>
+<p>先在 94 宿主机准备存储目录：</p>
+<pre><code class="language-bash">cd /var/lib/interview-lab
+bash host/setup-nfs.sh
+bash host/prepare-loki-storage.sh
+</code></pre>
+<p>回到 Mac，先创建 Loki 的 Local PV，再安装 Helm 组件：</p>
+<pre><code class="language-bash">kubectl apply -f k8s/loki-storage.yaml
+helm upgrade --install nfs csi-driver-nfs-4.13.6.tgz \
+  -n kube-system -f charts/nfs.yaml
+helm upgrade --install cert-manager cert-manager-1.21.3.tgz \
+  -n cert-manager --create-namespace -f charts/cert-manager.yaml
+helm upgrade --install argocd argo-cd-10.11.6.tgz \
+  -n argocd --create-namespace -f charts/argocd.yaml
+helm upgrade --install loki loki-7.5.0.tgz \
+  -n logging --create-namespace -f charts/loki.yaml
+helm upgrade --install alloy alloy-1.14.3.tgz \
+  -n logging -f charts/alloy.yaml
+kubectl apply -f k8s/loki-datasource.yaml
+</code></pre>
+<p>NFS CSI 之前需要先在 94 宿主机运行 <code>host/setup-nfs.sh</code> 并确认导出目录。证书组件部署后检查 webhook、cainjector 和 controller。Argo CD 需要 controller、repo-server、server、Redis 等组件完成启动。</p>
+<pre><code class="language-bash">kubectl -n kube-system get pods -l app.kubernetes.io/instance=nfs
+kubectl -n cert-manager get pods
+kubectl -n argocd get pods
+kubectl -n logging get pods,pvc
+kubectl get storageclass
+</code></pre>
+<p>镜像下载失败时先查看 Pod 事件。实验所用镜像均为 linux/amd64。源码中的镜像分发工具使用标准单平台归档；在 94 导入镜像后，再分发到四个节点的 containerd。归档传输使用 rsync 的 <code>--bwlimit</code>，例如 <code>--bwlimit=1024</code> 将单个传输限制到约 1 MiB/s。</p>
+<p>Mac 在 <code>interview/</code> 中准备平台镜像：</p>
+<pre><code class="language-bash">python3 prepare-images.py --inventory platform-images.json --name platform
+rsync -a --partial --bwlimit=1024 -e 'ssh -F ssh-config' \
+  image-bundle-platform.tar.gz lab-91:/var/lib/interview-lab/
+</code></pre>
+<p>在 91 执行：</p>
+<pre><code class="language-bash">scp /var/lib/interview-lab/image-bundle-platform.tar.gz \
+  root@10.100.1.94:/var/lib/interview-lab/
+ssh root@10.100.1.94 \
+  python3 /var/lib/interview-lab/host/import-image-bundle.py \
+  image-bundle-platform.tar.gz image-bundle-platform
+</code></pre>
+<p>CI 镜像使用 <code>ci-images.json</code> 和 <code>--name ci</code>，导入方法相同。宿主机服务镜像使用 <code>host-images.json</code> 和 <code>--name host</code>，在 94 导入时增加 <code>--host-only</code>；这些大型宿主机服务镜像保留在宿主机。</p>
+<h2 id="chapter-2-7">07：运行宿主机基础服务和任务系统</h2>
+<p>在 94 宿主机 <code>/var/lib/interview-lab</code> 下准备 <code>host/</code>、独立认证文件和服务镜像归档。<code>host/start-services.sh</code> 创建实验 CA、TLS 仓库及 SeaweedFS。<code>host/configure-registry.py</code> 配置节点对仓库 CA 的信任。<code>host/install-gitlab.sh</code> 启动独立 GitLab。</p>
+<p>生成认证文件前，需要 Python 工具依赖：</p>
+<pre><code class="language-bash">python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-tools.txt
+python setup-secrets.py
+</code></pre>
+<p>随机密码和 Token 保存在 <code>secrets/</code>，保持文件权限 0600。将 <code>host/</code> 和 <code>secrets/</code> 经 SSH 复制到 94 的 <code>/var/lib/interview-lab</code>。CA 创建完成后，将宿主机的 <code>certs/ca.crt</code> 和 <code>certs/ca.key</code> 经 SSH 取回 Mac 的 <code>interview/secrets/</code>，分别用于信任配置和 cert-manager 签发；CA 私钥不进入源码仓库。</p>
+<p>Mac 复制认证文件：</p>
+<pre><code class="language-bash">ssh -F ssh-config lab-91 \
+  'mkdir -p /var/lib/interview-lab/secrets; ssh root@10.100.1.94 mkdir -p /var/lib/interview-lab/secrets'
+rsync -a --bwlimit=1024 -e 'ssh -F ssh-config' \
+  secrets/ lab-91:/var/lib/interview-lab/secrets/
+ssh -F ssh-config lab-91 \
+  'rsync -a /var/lib/interview-lab/secrets/ root@10.100.1.94:/var/lib/interview-lab/secrets/'
+</code></pre>
+<p>在 94 使用宿主机镜像包启动基础服务：</p>
+<pre><code class="language-bash">cd /var/lib/interview-lab
+python3 host/import-image-bundle.py \
+  image-bundle-host.tar.gz image-bundle-host --host-only
+bash host/start-services.sh image-bundle-host-normalized.tar.gz
+python3 host/configure-registry.py
+bash host/install-gitlab.sh image-bundle-host-normalized.tar.gz
+bash host/push-base.sh
+bash host/push-buildkit.sh
+</code></pre>
+<p>私有仓库登录在 <code>configure-registry.py</code> 中完成。通过 <code>create-bucket.py</code> 验证 S3 创建、写入和读取。GitLab 首次初始化结束后，在 94 执行 <code>python3 host/bootstrap-gitlab.py</code> 创建实验 API Token。</p>
+<p>Mac 取回本实验 CA，然后执行 S3 校验：</p>
+<pre><code class="language-bash">ssh -F ssh-config lab-91 \
+  'scp root@10.100.1.94:/var/lib/interview-lab/certs/ca.crt root@10.100.1.94:/var/lib/interview-lab/certs/ca.key /var/lib/interview-lab/'
+scp -F ssh-config lab-91:/var/lib/interview-lab/ca.crt \
+  lab-91:/var/lib/interview-lab/ca.key secrets/
+chmod 600 secrets/ca.key
+python create-bucket.py
+</code></pre>
+<p>应用源码在 <code>app/</code>。Dockerfile 从内部 Python 基础镜像构建，依赖文件保存在 wheels 目录，应用默认使用非 root 用户运行。</p>
+<p>Mac 先把应用源码复制到 94：</p>
+<pre><code class="language-bash">ssh -F ssh-config lab-91 \
+  'mkdir -p /var/lib/interview-lab/app; ssh root@10.100.1.94 mkdir -p /var/lib/interview-lab/app'
+rsync -a --bwlimit=1024 -e 'ssh -F ssh-config' \
+  app/ lab-91:/var/lib/interview-lab/app/
+ssh -F ssh-config lab-91 \
+  'rsync -a /var/lib/interview-lab/app/ root@10.100.1.94:/var/lib/interview-lab/app/'
+</code></pre>
+<p>在 94 构建和推送初始应用镜像：</p>
+<pre><code class="language-bash">cd /var/lib/interview-lab
+docker build --platform linux/amd64 -t interview-tasks:1.0.0 app
+docker tag interview-tasks:1.0.0 \
+  192.168.204.1:15000/learning/tasks:1.0.0
+docker push 192.168.204.1:15000/learning/tasks:1.0.0
+</code></pre>
+<p>回到 Mac 的 <code>interview/</code> 执行部署：</p>
+<pre><code class="language-bash">python deploy-application.py
+kubectl apply -f k8s/alerts.yaml
+</code></pre>
+<p>94 宿主机已经通过前面的步骤配置仓库 CA 和登录认证。Mac 通过 Kubernetes API 创建应用 Secret、数据库、Deployment、Service、HPA、PDB、指标采集和 Ingress。</p>
+<p>验证数据库 PVC 绑定、PostgreSQL Ready、tasks 两副本 Ready、Certificate Ready，再打开任务系统页面。详细原理和接口见《Kubernetes平台部署与学习流程》。</p>
+<h2 id="chapter-2-8">08：连接 GitLab CI 和 Argo CD</h2>
+<p>GitLab 初始化完成后，创建私有项目和 Runner。<code>setup-gitlab.py</code> 创建项目、项目 Runner、CI 变量和 Argo CD 仓库认证。执行之前，GitLab 的 API Token 应已经通过宿主机 <code>host/bootstrap-gitlab.py</code> 创建。</p>
+<pre><code class="language-bash">python setup-gitlab.py
+kubectl -n ci get pods
+kubectl -n ci logs deployment/gitlab-runner -c register
+python push-source.py
+</code></pre>
+<p>在 GitLab 查看 integration 和 build 两个 Job。integration 针对已经运行的任务系统执行真实数据库操作；build 使用 rootless BuildKit 构建并推送镜像。流水线通过后连接 Argo CD：</p>
+<pre><code class="language-bash">kubectl apply -f k8s/argocd-application.yaml
+kubectl -n argocd get application learning-tasks
+kubectl -n interview-app rollout status deployment/tasks --timeout=180s
+</code></pre>
+<p>需要理解的原理：GitLab 保存源码和流水线；Runner 创建 CI Pod；BuildKit 构建镜像；Registry 保存镜像；Git 保存期望的部署配置；Argo CD 将期望配置同步到 Kubernetes。应用业务数据保存在数据库 PVC。</p>
+<h2 id="chapter-2-9">09：执行真实负载和故障演练</h2>
+<p>首先运行 <code>verify-application.py</code>，生成用于后续恢复验证的真实业务记录。然后按顺序执行：</p>
+<ol>
+<li><code>release-drill.sh</code>：验证错误镜像发布时旧副本继续可用，修正配置后恢复。</li>
+<li><code>application-drills.py</code>：停止数据库，验证 readiness 和实际告警，恢复数据库并检查原有数据，删除应用 Pod 后检查自动重建。</li>
+<li>登录负载 Job：通过集群 Service 发出真实请求，观察 HPA 扩容和负载结束后的缩容。</li>
+<li>PDB 与驱逐：观察可用副本约束和节点恢复调度过程。</li>
+</ol>
+<p>这些演练在实验命名空间执行。每次演练后检查 Pods、Deployment、EndpointSlice、HPA、告警状态和真实 HTTP 请求。</p>
+<h2 id="chapter-2-10">10：建立备份并恢复到新数据库</h2>
+<p>先完成 S3 创建、写入、读取校验，创建 Velero 认证 Secret，再安装 Velero：</p>
+<pre><code class="language-bash">kubectl create namespace velero
+kubectl -n velero create secret generic velero-cloud \
+  --from-file=cloud=secrets/cloud
+helm upgrade --install velero velero-12.2.1.tgz \
+  -n velero -f charts/velero.yaml
+kubectl -n velero get pods,backupstoragelocation
+python verify-backup.py
+</code></pre>
+<p>恢复验证必须使用新的命名空间、不同的 PV 和新的 PostgreSQL 数据目录。查看备份、恢复状态、备份文件摘要，并在恢复后的数据库查询原业务记录。</p>
+<h2 id="chapter-2-11">11：日常学习和排查记录</h2>
+<p>每完成一个实验，记录以下内容：</p>
+<ul>
+<li>操作在哪台机器、哪个命名空间执行。</li>
+<li>修改了哪个对象、配置字段或者进程。</li>
+<li>观察到哪些状态、日志、事件和指标变化。</li>
+<li>这些变化由哪个 Kubernetes 组件处理。</li>
+<li>恢复操作是什么，恢复后如何验证。</li>
+</ul>
+<p>配套材料：《204节点RKE2集群搭建流程》《204集群监控部署与使用文档》《Pod项目实操学习手册》《Kubernetes平台部署与学习流程》、部署源码包和实际验收记录。</p>
+<h2 id="chapter-2-12">12：打开页面并复查验收</h2>
+<p>保持第 03 步的 SSH 连接，在 Mac 的 <code>interview/</code> 新终端设置 KUBECONFIG，然后执行 <code>bash open-lab.sh</code>。脚本会打印任务系统、Pod 项目、Grafana、Prometheus、Alertmanager 和 Argo CD 的本机入口。关闭此终端会关闭这些页面转发。</p>
+<pre><code class="language-bash">export KUBECONFIG="$PWD/secrets/kubeconfig"
+bash open-lab.sh
+</code></pre>
+<p>在另一个使用相同 KUBECONFIG 和 Python 虚拟环境的终端，读取管理账号并保存到本地私有文件：</p>
+<pre><code class="language-bash">kubectl -n argocd get secret argocd-initial-admin-secret -o json \
+  &gt; secrets/argocd-admin.json
+kubectl -n monitoring get secret grafana-admin -o json \
+  &gt; secrets/grafana-admin.json
+chmod 600 secrets/argocd-admin.json secrets/grafana-admin.json
+python write-access.py
+</code></pre>
+<p>访问凭据位于 <code>secrets/access.txt</code>。最终验收还需要 Loki API 转发：</p>
+<pre><code class="language-bash">kubectl -n logging port-forward service/loki-gateway 13100:80
+</code></pre>
+<p>保持转发运行，在另一个已配置环境的终端执行：</p>
+<pre><code class="language-bash">python gitlab-status.py
+python verify-platform.py
+</code></pre>
+<p>验收脚本检查节点就绪和调度、全部活动 Pod、管理页面、HTTPS、Prometheus 采集、真实 Loki 日志、Grafana 数据源、CI 成功状态、Argo CD 提交版本、备份恢复状态和 HPA 最小副本数。</p></section>
+<section id="chapter-3" class="chapter"><h1 id="chapter-3-0">204 节点 Ubuntu 虚拟机与 RKE2 集群搭建流程</h1>
+<h2 id="chapter-3-1">宿主机与连接方式</h2>
+<p>操作日期：2026 年 10 月 27 日。</p>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>配置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>跳板机</td>
+<td><code>10.100.1.91</code></td>
+</tr>
+<tr>
+<td>虚拟化宿主机</td>
+<td><code>10.100.1.94</code>，主机名称 <code>204</code></td>
+</tr>
+<tr>
+<td>宿主机内部接口</td>
+<td><code>192.168.10.204/23</code></td>
+</tr>
+<tr>
+<td>宿主机硬件</td>
+<td>Intel Xeon Silver 4416+，40 个逻辑 CPU，125 GiB 内存</td>
+</tr>
+<tr>
+<td>虚拟化方式</td>
+<td>KVM、QEMU、libvirt、virt-install</td>
+</tr>
+<tr>
+<td>虚拟机操作系统</td>
+<td>Ubuntu Server 24.04.5 LTS amd64 cloud image</td>
+</tr>
+<tr>
+<td>Kubernetes 发行版</td>
+<td>RKE2 <code>v1.36.5+rke2r1</code></td>
+</tr>
+<tr>
+<td>网络插件</td>
+<td>Canal</td>
+</tr>
+<tr>
+<td>Ingress 控制器</td>
+<td>Traefik</td>
+</tr>
+</tbody>
+</table>
+<p>使用自己的 VPN、跳板机和授权账号连接实验宿主机。本文的私有地址说明实验拓扑，复现时需要按自己的网络规划修改。公网接入地址、账号认证信息由环境管理员单独提供。</p>
+<p>在自己的 <code>interview/ssh-config</code> 中配置 <code>lab-91</code> 别名。根据自己的网络环境选择直接 SSH 或 ProxyCommand，通过终端交互完成认证。建立连接前确认已获得目标环境的操作授权。</p>
+<h2 id="chapter-3-2">虚拟机与网络配置</h2>
+<table>
+<thead>
+<tr>
+<th>虚拟机</th>
+<th>角色</th>
+<th>IP 地址</th>
+<th>CPU</th>
+<th>内存</th>
+<th>系统磁盘</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rke2-server-1</code></td>
+<td>控制平面、etcd</td>
+<td><code>192.168.204.11</code></td>
+<td>4 vCPU</td>
+<td>4 GiB</td>
+<td>20 GiB</td>
+</tr>
+<tr>
+<td><code>rke2-worker-1</code></td>
+<td>工作节点</td>
+<td><code>192.168.204.12</code></td>
+<td>4 vCPU</td>
+<td>4 GiB</td>
+<td>20 GiB</td>
+</tr>
+<tr>
+<td><code>rke2-worker-2</code></td>
+<td>工作节点</td>
+<td><code>192.168.204.13</code></td>
+<td>4 vCPU</td>
+<td>4 GiB</td>
+<td>20 GiB</td>
+</tr>
+<tr>
+<td><code>rke2-worker-3</code></td>
+<td>工作节点</td>
+<td><code>192.168.204.14</code></td>
+<td>4 vCPU</td>
+<td>4 GiB</td>
+<td>20 GiB</td>
+</tr>
+</tbody>
+</table>
+<p>合计配置 16 vCPU、16 GiB 内存、80 GiB 虚拟磁盘容量。qcow2 按实际写入数据占用宿主机空间。</p>
+<p>libvirt 网络名称为 <code>rke2-lab</code>，桥接接口为 <code>virbr-rke2</code>，网关为 <code>192.168.204.1/24</code>。通过 MAC 地址固定 DHCP 分配结果，虚拟机使用 NAT 访问外部网络。宿主机可以直接连接这些地址；校外终端通过跳板机、宿主机进入虚拟机网络。</p>
+<p>Pod 地址范围为 <code>10.244.0.0/16</code>，Service 地址范围为 <code>10.245.0.0/16</code>，集群 DNS 为 <code>10.245.0.10</code>。这些地址避开宿主机已有的 Docker 网络、<code>10.42.0.0/16</code> Pod 网络和物理接口网络。</p>
+<p>四台虚拟机均位于同一宿主机，控制平面使用单个 etcd 成员。宿主机故障将影响整个集群。每台虚拟机的 CPU、内存配置对应节点容量，Pod 通过 Kubernetes 的 requests、limits 分配资源。</p>
+<h2 id="chapter-3-3">安装宿主机依赖</h2>
+<p>在宿主机执行：</p>
+<pre><code class="language-bash">mkdir -p /var/lib/rke2-lab/work
+apt-get update
+DEBIAN_FRONTEND=noninteractive apt-get install -y \
+  qemu-kvm libvirt-daemon-system virtinst cloud-image-utils
+systemctl is-active libvirtd
+test -c /dev/kvm
+</code></pre>
+<p>安装材料位于 <code>/var/lib/rke2-lab</code>。虚拟磁盘和 cloud-init 种子磁盘位于 <code>/var/lib/libvirt/images/rke2-lab</code>。</p>
+<h2 id="chapter-3-4">下载与校验 Ubuntu 镜像</h2>
+<p>在宿主机执行：</p>
+<pre><code class="language-bash">cd /var/lib/rke2-lab
+curl -fL --connect-timeout 15 --max-time 600 \
+  https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img \
+  -o noble-server-cloudimg-amd64.img
+curl -fL --connect-timeout 15 --max-time 60 \
+  https://cloud-images.ubuntu.com/noble/current/SHA256SUMS \
+  -o work/SHA256SUMS
+sha256sum --ignore-missing -c work/SHA256SUMS
+</code></pre>
+<p>本次使用的 Ubuntu 镜像 SHA256 为：</p>
+<pre><code class="language-text">04e8f2461a16a44e78a370284471f29616cdd9baf1893df25807b71f985b6c94
+</code></pre>
+<p>cloud-init 创建 <code>ubuntu</code> 用户，授权部署专用 SSH 公钥，允许该用户执行 sudo，关闭 SSH 密码认证。部署私钥保存在宿主机 <code>/var/lib/rke2-lab/id_ed25519</code>，权限为 <code>0600</code>。</p>
+<p>重新搭建独立环境时，在新安装目录生成部署密钥，然后使用文本编辑器将公钥填写到 <code>user-data</code> 的 <code>ssh_authorized_keys</code> 中：</p>
+<pre><code class="language-bash">ssh-keygen -t ed25519 -N '' -C rke2-lab-204 \
+  -f /var/lib/rke2-lab/id_ed25519
+cat /var/lib/rke2-lab/id_ed25519.pub
+</code></pre>
+<p>当前环境使用已经部署的密钥，保留该私钥即可继续管理现有虚拟机。交付配置材料包含公钥和安装脚本，私钥保留在受控安装目录中。</p>
+<h2 id="chapter-3-5">创建虚拟机</h2>
+<p>检查提供的 <code>network.xml</code>、<code>user-data</code> 和四份 <code>meta-data</code>，然后在宿主机执行：</p>
+<pre><code class="language-bash">cd /var/lib/rke2-lab
+bash provision.sh
+virsh list --all
+virsh net-dhcp-leases rke2-lab
+</code></pre>
+<p><code>provision.sh</code> 定义 NAT 网络，为四个不同的 MAC 地址分配固定 IP，分别创建 20 GiB qcow2 磁盘，并使用 virtio 磁盘和网卡启动虚拟机。网络和虚拟机均配置自动启动。创建脚本要求名称和目录尚未存在。</p>
+<h2 id="chapter-3-6">准备 RKE2 离线安装材料</h2>
+<p>在能够访问 GitHub 的机器下载同一版本的三个官方文件：</p>
+<pre><code class="language-bash">curl -fL 'https://github.com/rancher/rke2/releases/download/v1.36.5%2Brke2r1/rke2.linux-amd64.tar.gz' \
+  -o rke2.linux-amd64.tar.gz
+curl -fL 'https://github.com/rancher/rke2/releases/download/v1.36.5%2Brke2r1/rke2-images.linux-amd64.tar.zst' \
+  -o rke2-images.linux-amd64.tar.zst
+curl -fL 'https://github.com/rancher/rke2/releases/download/v1.36.5%2Brke2r1/sha256sum-amd64.txt' \
+  -o sha256sum-amd64.txt
+sha256sum --ignore-missing -c sha256sum-amd64.txt
+</code></pre>
+<p>将两个归档文件放入宿主机 <code>/var/lib/rke2-lab/work</code>，校验文件放入 <code>/var/lib/rke2-lab</code>。从 <code>https://get.rke2.io</code> 下载官方安装脚本至 <code>work/install-rke2.sh</code>。离线镜像由安装脚本校验并复制到各节点的 <code>/var/lib/rancher/rke2/agent/images</code>。</p>
+<pre><code class="language-bash">curl -fL https://get.rke2.io \
+  -o /var/lib/rke2-lab/work/install-rke2.sh
+</code></pre>
+<p>本次使用的文件校验值：</p>
+<pre><code class="language-text">5af963b4a2cbb553dbf54bae5d884ce48562af808883e627ecc5d179408949f3  rke2-images.linux-amd64.tar.zst
+4fdbe8a8a32517fbcb6e80c71ca393b96828fbb87685102d9058b51527f9278d  rke2.linux-amd64.tar.gz
+</code></pre>
+<h2 id="chapter-3-7">安装控制平面和工作节点</h2>
+<p>在宿主机执行：</p>
+<pre><code class="language-bash">cd /var/lib/rke2-lab
+chmod 600 id_ed25519
+bash install-cluster.sh
+</code></pre>
+<p>脚本等待 cloud-init 完成，安装 AppArmor、iptables、curl、CA 证书及 NFS 客户端，检查 swap 和时间同步，再分发离线安装材料。</p>
+<p>控制平面使用提供的 <code>server.yaml</code>，安装后保存到 <code>/etc/rancher/rke2/config.yaml</code>。配置明确指定节点地址、Pod 和 Service 网段、Canal、Traefik，并设置控制平面 <code>NoSchedule</code> 污点。管理员 kubeconfig 权限为 <code>0600</code>。</p>
+<p>工作节点使用提供的 <code>agent.yaml</code>，通过 <code>https://192.168.204.11:9345</code> 注册。加入令牌经 SSH 传输，安装到工作节点 <code>/etc/rancher/rke2/node-token</code>，权限为 <code>0600</code>。</p>
+<p>服务名称分别为 <code>rke2-server</code>、<code>rke2-agent</code>。节点之间允许 Kubernetes API <code>6443/TCP</code>、注册端口 <code>9345/TCP</code>、kubelet <code>10250/TCP</code> 和 Canal VXLAN <code>8472/UDP</code> 通信。</p>
+<h2 id="chapter-3-8">连接虚拟机并管理 Kubernetes</h2>
+<p>在宿主机执行：</p>
+<pre><code class="language-bash">ssh -i /var/lib/rke2-lab/id_ed25519 ubuntu@192.168.204.11
+sudo /var/lib/rancher/rke2/bin/kubectl \
+  --kubeconfig /etc/rancher/rke2/rke2.yaml get nodes -o wide
+</code></pre>
+<p>进入控制平面管理员 shell 后设置环境变量：</p>
+<pre><code class="language-bash">sudo -i
+export TERM=xterm-256color
+export PATH=/var/lib/rancher/rke2/bin:$PATH
+export KUBECONFIG=/etc/rancher/rke2/rke2.yaml
+kubectl get nodes -o wide
+kubectl get pods -A
+</code></pre>
+<h2 id="chapter-3-9">验收项目</h2>
+<p>使用 <code>validation.yaml</code> 在三个工作节点部署 BusyBox HTTP 服务，通过 <code>validate-cluster.sh</code> 检查 API、节点就绪状态、DNS、Service 和跨节点 Pod 通信，并创建 etcd 快照。验证镜像为 <code>busybox:1.37.0</code>，通过 Docker 下载 amd64 镜像后导出，再使用各节点的 containerd 导入。</p>
+<p>在可访问 Docker Hub 且运行 Docker 的机器执行：</p>
+<pre><code class="language-bash">docker pull --platform linux/amd64 busybox:1.37.0
+docker save --platform linux/amd64 -o busybox-1.37.0.tar busybox:1.37.0
+</code></pre>
+<p>将归档传入宿主机 <code>/var/lib/rke2-lab/work</code>。<code>deploy.sh</code> 包含安装和验证镜像分发步骤，可以作为完整安装入口：</p>
+<pre><code class="language-bash">cd /var/lib/rke2-lab
+bash deploy.sh
+</code></pre>
+<p>安装和验收分别记录在 <code>work/deploy.log</code>、<code>work/acceptance.log</code>。在已经完成安装的环境中，可以单独执行镜像导入和验收，无需再次执行安装流程。单台节点的镜像导入命令为：</p>
+<pre><code class="language-bash">scp -i /var/lib/rke2-lab/id_ed25519 work/busybox-1.37.0.tar \
+  ubuntu@192.168.204.12:/home/ubuntu/
+ssh -i /var/lib/rke2-lab/id_ed25519 ubuntu@192.168.204.12 \
+  sudo /var/lib/rancher/rke2/bin/ctr \
+  --address /run/k3s/containerd/containerd.sock --namespace k8s.io \
+  images import /home/ubuntu/busybox-1.37.0.tar
+</code></pre>
+<p>控制平面执行：</p>
+<pre><code class="language-bash">sudo bash /home/ubuntu/validate-cluster.sh
+</code></pre>
+<h2 id="chapter-3-10">实际验收结果</h2>
+<p>验收时间：2026 年 10 月 27 日 20:53，Asia/Shanghai。</p>
+<table>
+<thead>
+<tr>
+<th>检查项目</th>
+<th>实际结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>四台虚拟机</td>
+<td>全部运行，每台 4 vCPU、4 GiB 内存、20 GiB 虚拟磁盘</td>
+</tr>
+<tr>
+<td>Kubernetes 节点</td>
+<td>四个节点全部 <code>Ready</code>，版本 <code>v1.36.5+rke2r1</code></td>
+</tr>
+<tr>
+<td>API readiness</td>
+<td><code>/readyz?verbose</code> 全部通过</td>
+</tr>
+<tr>
+<td>系统组件</td>
+<td>Canal、CoreDNS、Metrics Server、Snapshot Controller、Traefik 全部完成 rollout</td>
+</tr>
+<tr>
+<td>集群 DNS</td>
+<td>三个工作节点的测试 Pod 均解析出 <code>kubernetes.default.svc.cluster.local = 10.245.0.1</code></td>
+</tr>
+<tr>
+<td>Service 访问</td>
+<td>三个测试 Pod 均通过 Service 域名完成 HTTP 请求</td>
+</tr>
+<tr>
+<td>Pod 网络</td>
+<td>三个测试 Pod 对全部三个 Pod IP 的 9 次 HTTP 请求通过，包含 6 次跨节点访问</td>
+</tr>
+<tr>
+<td>资源指标</td>
+<td><code>kubectl top nodes</code> 返回四个节点的 CPU 和内存数据</td>
+</tr>
+<tr>
+<td>工作节点重启</td>
+<td><code>rke2-worker-3</code> 实际重启后恢复 <code>Ready</code>，系统组件和测试 Pod 恢复运行</td>
+</tr>
+<tr>
+<td>etcd 快照</td>
+<td>创建 <code>acceptance-rke2-server-1-1793105594</code>，文件大小 18,272,288 字节</td>
+</tr>
+</tbody>
+</table>
+<p>重启检查中的系统启动标识：</p>
+<pre><code class="language-text">重启前：52883a08-c09e-4470-ab50-8d0672d203fd
+重启后：5dd65642-8696-4f79-a131-e7835c4badf3
+</code></pre>
+<p>验收时资源用量：</p>
+<table>
+<thead>
+<tr>
+<th>节点</th>
+<th>CPU 使用量</th>
+<th>内存使用量</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rke2-server-1</code></td>
+<td>262m</td>
+<td>1612 MiB</td>
+</tr>
+<tr>
+<td><code>rke2-worker-1</code></td>
+<td>78m</td>
+<td>399 MiB</td>
+</tr>
+<tr>
+<td><code>rke2-worker-2</code></td>
+<td>68m</td>
+<td>522 MiB</td>
+</tr>
+<tr>
+<td><code>rke2-worker-3</code></td>
+<td>212m</td>
+<td>1062 MiB</td>
+</tr>
+</tbody>
+</table>
+<p><code>cluster-validation</code> 命名空间保留三个测试 Pod 和一个 ClusterIP Service，便于复查网络。完整命令输出保存在随附的 <code>集群验收记录.log</code> 中。</p>
+<h2 id="chapter-3-11">日常维护</h2>
+<p>在宿主机查看虚拟机：</p>
+<pre><code class="language-bash">virsh list --all
+virsh dominfo rke2-server-1
+virsh net-dhcp-leases rke2-lab
+df -h /
+</code></pre>
+<p>在控制平面检查服务、资源和备份：</p>
+<pre><code class="language-bash">systemctl status rke2-server
+journalctl -u rke2-server -n 100 --no-pager
+kubectl get nodes -o wide
+kubectl get pods -A
+kubectl top nodes
+RKE2_CONFIG_FILE=/dev/null rke2 etcd-snapshot save --name manual
+RKE2_CONFIG_FILE=/dev/null rke2 etcd-snapshot ls
+</code></pre>
+<p>etcd 默认每 12 小时创建本地快照，保留 5 份。快照目录为 <code>/var/lib/rancher/rke2/server/db/snapshots</code>。恢复时需要同时保留服务器令牌；完整数据备份还需要包含业务 PVC 或其他持久数据。20 GiB 系统磁盘用于当前集群组件和验证工作负载，运行业务时需要检查磁盘使用情况。</p>
+<h2 id="chapter-3-12">官方资料</h2>
+<ul>
+<li><a href="https://docs.rke2.io/install/requirements">RKE2 安装要求</a></li>
+<li><a href="https://docs.rke2.io/install/quickstart">RKE2 安装流程</a></li>
+<li><a href="https://docs.rke2.io/install/configuration">RKE2 配置文件与安装参数</a></li>
+<li><a href="https://docs.rke2.io/reference/server_config">RKE2 服务端配置参数</a></li>
+<li><a href="https://docs.rke2.io/networking/basic_network_options">RKE2 网络配置</a></li>
+</ul></section>
+<section id="chapter-4" class="chapter"><h1 id="chapter-4-0">204 集群 Prometheus Grafana 与 Alertmanager 部署和使用</h1>
+<h2 id="chapter-4-1">集群与组件配置</h2>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>配置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Kubernetes</td>
+<td>RKE2 <code>v1.36.5+rke2r1</code></td>
+</tr>
+<tr>
+<td>宿主机</td>
+<td><code>10.100.1.94</code>，主机名称 <code>204</code></td>
+</tr>
+<tr>
+<td>控制平面</td>
+<td><code>rke2-server-1</code>，<code>192.168.204.11</code></td>
+</tr>
+<tr>
+<td>工作节点</td>
+<td><code>192.168.204.12</code>、<code>192.168.204.13</code>、<code>192.168.204.14</code></td>
+</tr>
+<tr>
+<td>Helm release</td>
+<td><code>monitoring</code></td>
+</tr>
+<tr>
+<td>命名空间</td>
+<td><code>monitoring</code></td>
+</tr>
+<tr>
+<td>Helm chart</td>
+<td><code>kube-prometheus-stack</code> <code>92.14.0</code></td>
+</tr>
+<tr>
+<td>本地材料目录</td>
+<td><code>work/monitoring</code></td>
+</tr>
+<tr>
+<td>宿主机材料目录</td>
+<td><code>/var/lib/rke2-lab/monitoring</code></td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>组件</th>
+<th>版本</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prometheus</td>
+<td><code>v3.15.1</code></td>
+<td>定期采集指标，保存时间序列，执行 PromQL 和告警规则</td>
+</tr>
+<tr>
+<td>Grafana</td>
+<td><code>13.2.4</code></td>
+<td>提供集群、节点、工作负载和容器监控仪表盘</td>
+</tr>
+<tr>
+<td>Alertmanager</td>
+<td><code>v0.34.1</code></td>
+<td>接收 Prometheus 告警，执行分组、抑制和静默</td>
+</tr>
+<tr>
+<td>Prometheus Operator</td>
+<td><code>v0.94.2</code></td>
+<td>管理 Prometheus、Alertmanager 和指标发现配置</td>
+</tr>
+<tr>
+<td>node-exporter</td>
+<td><code>v1.12.1</code></td>
+<td>采集四台虚拟机的 CPU、内存、磁盘和网络指标</td>
+</tr>
+<tr>
+<td>kube-state-metrics</td>
+<td><code>v2.20.0</code></td>
+<td>提供 Node、Pod、Deployment、StatefulSet 和 PVC 等对象的状态指标</td>
+</tr>
+</tbody>
+</table>
+<p>Grafana 默认仪表盘、Prometheus recording rules 和 alerting rules 随 Helm chart 安装。Alertmanager 使用 chart 默认接收配置；邮件、飞书和其他外部通知目的地需要配置对应的接收地址及认证信息。</p>
+<h2 id="chapter-4-2">资源与持久化存储</h2>
+<table>
+<thead>
+<tr>
+<th>数据</th>
+<th>PVC 容量</th>
+<th>节点</th>
+<th>本地目录</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prometheus TSDB</td>
+<td>5 GiB</td>
+<td><code>rke2-worker-1</code></td>
+<td><code>/var/lib/monitoring/prometheus</code></td>
+</tr>
+<tr>
+<td>Grafana 数据库</td>
+<td>1 GiB</td>
+<td><code>rke2-worker-2</code></td>
+<td><code>/var/lib/monitoring/grafana</code></td>
+</tr>
+<tr>
+<td>Alertmanager 状态</td>
+<td>1 GiB</td>
+<td><code>rke2-worker-3</code></td>
+<td><code>/var/lib/monitoring/alertmanager</code></td>
+</tr>
+</tbody>
+</table>
+<p>三个 PV 使用 <code>monitoring-local</code> StorageClass、<code>ReadWriteOnce</code>、<code>Retain</code> 回收策略和节点亲和性。Grafana 的 PVC 名称为 <code>grafana-data</code>，Prometheus 和 Alertmanager 的 PVC 由对应 StatefulSet 创建。</p>
+<p>Prometheus 保留最近 3 天的数据，数据块保留容量设置为 <code>3GB</code>；WAL、head block 和其他临时数据还会占用磁盘。虚拟机系统磁盘容量为 20 GiB，必须同时检查根文件系统的可用空间。Local PV 的声明容量用于 Kubernetes 资源绑定，实际数据与根文件系统共享容量。</p>
+<p>Prometheus 请求 200m CPU、512 MiB 内存，限制为 1 CPU、1536 MiB 内存。Grafana 主容器请求 100m CPU、128 MiB 内存，限制为 500m CPU、512 MiB 内存。Alertmanager 请求 50m CPU、64 MiB 内存，限制为 300m CPU、256 MiB 内存。Operator、exporter、sidecar 的 requests 和 limits 见随附 <code>values.yaml</code>。</p>
+<p>四台虚拟机位于同一宿主机。Local PV 数据随对应虚拟机磁盘保存；节点故障期间，对应有状态组件需要等待该节点恢复。etcd 快照保存 Kubernetes 对象，业务 PV 数据需要单独备份。</p>
+<h2 id="chapter-4-3">RKE2 指标接口</h2>
+<p>控制平面附加配置保存到 <code>/etc/rancher/rke2/config.yaml.d/monitoring.yaml</code>：</p>
+<pre><code class="language-yaml">etcd-expose-metrics: true
+kube-controller-manager-arg:
+  - bind-address=0.0.0.0
+kube-scheduler-arg:
+  - bind-address=0.0.0.0
+kube-proxy-arg:
+  - metrics-bind-address=0.0.0.0:10249
+</code></pre>
+<p>三个工作节点的附加配置为：</p>
+<pre><code class="language-yaml">kube-proxy-arg:
+  - metrics-bind-address=0.0.0.0:10249
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>采集对象</th>
+<th>接口</th>
+<th>认证和校验</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Kubernetes API</td>
+<td><code>6443/HTTPS</code></td>
+<td>ServiceAccount token 和集群 CA</td>
+</tr>
+<tr>
+<td>kubelet 与 cAdvisor</td>
+<td><code>10250/HTTPS</code></td>
+<td>ServiceAccount token 和集群 CA</td>
+</tr>
+<tr>
+<td>controller-manager</td>
+<td><code>10257/HTTPS</code></td>
+<td>ServiceAccount token、集群 CA，TLS server name 为 <code>localhost</code></td>
+</tr>
+<tr>
+<td>scheduler</td>
+<td><code>10259/HTTPS</code></td>
+<td>ServiceAccount token、集群 CA，TLS server name 为 <code>localhost</code></td>
+</tr>
+<tr>
+<td>etcd metrics</td>
+<td><code>2381/HTTP</code></td>
+<td>虚拟机内部网络接口</td>
+</tr>
+<tr>
+<td>kube-proxy</td>
+<td><code>10249/HTTP</code></td>
+<td>虚拟机内部网络接口</td>
+</tr>
+<tr>
+<td>node-exporter</td>
+<td><code>9100/HTTP</code></td>
+<td>虚拟机内部网络接口</td>
+</tr>
+</tbody>
+</table>
+<p>RKE2 的 scheduler 和 controller-manager 服务证书包含 <code>localhost</code>，由 RKE2 server CA 签发。采集配置使用该 server name 并校验证书。<code>prepare-host.sh</code> 安装附加配置、创建数据目录并依次重启四个 RKE2 服务。</p>
+<h2 id="chapter-4-4">下载 Helm chart 与离线镜像</h2>
+<p>本次使用 Helm <code>v3.19.0</code>。Helm 配置、缓存和数据目录均放在任务目录下。</p>
+<p>控制平面安装的 Helm 位于 <code>/usr/local/bin/helm</code>。重新准备安装环境时，将官方 <code>helm-v3.19.0-linux-amd64.tar.gz</code> 放入宿主机材料目录，并执行随附的 <code>install-tools.sh</code>。该脚本将 Helm、chart、存储清单和配置文件传入控制平面的 <code>/home/ubuntu/monitoring</code>。</p>
+<pre><code class="language-bash">helm pull oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack \
+  --version 92.14.0 --destination work/monitoring
+</code></pre>
+<p>chart OCI digest：</p>
+<pre><code class="language-text">sha256:a7cb3c6e55acc9cd7cc918fe1e4f62f6da57102255939577a051188e586340c0
+</code></pre>
+<p>在可访问镜像仓库且安装 Docker 的机器执行：</p>
+<pre><code class="language-bash">bash work/monitoring/download-images.sh
+</code></pre>
+<p>脚本按 <code>images.txt</code> 下载 <code>linux/amd64</code> 镜像，导出 <code>monitoring-images.tar.gz</code> 并生成 <code>monitoring-images.sha256</code>。镜像清单包括 Operator、config-reloader、Prometheus、Grafana、Grafana sidecar、Alertmanager、node-exporter、kube-state-metrics、webhook 证书生成组件及 Helm 测试镜像。</p>
+<p>本次镜像包大小为 742,741,345 字节，SHA256 为：</p>
+<pre><code class="language-text">3d301fa3af710ab02d5005d7ab1a5dfc02a148a83bf0729f7461ab4f705451ca
+</code></pre>
+<p>通过跳板机将离线镜像包、校验文件和 <code>import-images.sh</code> 复制到宿主机 <code>/var/lib/rke2-lab/monitoring</code>，然后执行：</p>
+<pre><code class="language-bash">cd /var/lib/rke2-lab/monitoring
+sha256sum -c monitoring-images.sha256
+bash import-images.sh
+</code></pre>
+<p><code>import-images.sh</code> 校验镜像包，将其分发到四台虚拟机，并使用各节点的 containerd <code>k8s.io</code> namespace 导入。成功后删除各虚拟机中的临时传输包，宿主机保留原始镜像材料。</p>
+<h2 id="chapter-4-5">创建存储与 Grafana 登录凭证</h2>
+<p>在宿主机执行数据目录和 RKE2 指标接口准备脚本：</p>
+<pre><code class="language-bash">cd /var/lib/rke2-lab/monitoring
+bash prepare-host.sh
+</code></pre>
+<p>以下 <code>kubectl</code>、<code>helm</code> 命令均要求使用本集群的管理员 kubeconfig。控制平面的原始 kubeconfig 位于 <code>/etc/rancher/rke2/rke2.yaml</code>，<code>kubectl</code> 位于 <code>/var/lib/rancher/rke2/bin</code>。</p>
+<p>在控制平面执行：</p>
+<pre><code class="language-bash">sudo -i
+export PATH=/var/lib/rancher/rke2/bin:$PATH
+export KUBECONFIG=/etc/rancher/rke2/rke2.yaml
+cd /home/ubuntu/monitoring
+</code></pre>
+<pre><code class="language-bash">kubectl apply -f storage.yaml
+</code></pre>
+<p>为首次部署生成随机管理员密码：</p>
+<pre><code class="language-bash">umask 077
+printf 'admin-user=admin\nadmin-password=%s\n' "$(openssl rand -hex 24)" \
+  &gt; grafana-admin.env
+kubectl -n monitoring create secret generic grafana-admin \
+  --from-env-file=grafana-admin.env
+</code></pre>
+<p><code>values.yaml</code> 通过 <code>grafana.admin.existingSecret: grafana-admin</code> 引用凭证。现有环境保留已创建的 Secret；随附安装配置包不包含密码文件或管理员 kubeconfig。</p>
+<h2 id="chapter-4-6">安装监控组件</h2>
+<pre><code class="language-bash">helm upgrade --install monitoring kube-prometheus-stack-92.14.0.tgz \
+  --namespace monitoring \
+  --values values.yaml \
+  --wait --timeout 10m --history-max 5
+</code></pre>
+<p>检查资源：</p>
+<pre><code class="language-bash">helm status monitoring -n monitoring
+kubectl -n monitoring get pods -o wide
+kubectl -n monitoring get pvc
+kubectl get pv
+kubectl -n monitoring get servicemonitors,prometheusrules
+</code></pre>
+<p><code>values.yaml</code> 配置了三个 NodePort：Grafana <code>30300</code>、Prometheus <code>30900</code>、Alertmanager <code>30903</code>。这些端口位于虚拟机内部网络，校外通过 SSH 转发访问。</p>
+<h2 id="chapter-4-7">从 Mac 打开监控页面</h2>
+<p>保持 NetBird 连接和本地 <code>1080</code> SSH SOCKS5 隧道运行，执行随附脚本：</p>
+<pre><code class="language-bash">bash open-monitoring.sh
+</code></pre>
+<p>脚本通过 <code>10.100.1.91</code> 连接 <code>10.100.1.94</code>，转发本地端口。输入跳板机密码后保持终端运行。</p>
+<p>如果已经能够打开下面的地址，直接使用现有连接。</p>
+<table>
+<thead>
+<tr>
+<th>页面</th>
+<th>浏览器地址</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Grafana</td>
+<td><code>http://127.0.0.1:3000</code></td>
+</tr>
+<tr>
+<td>Prometheus</td>
+<td><code>http://127.0.0.1:9090</code></td>
+</tr>
+<tr>
+<td>Alertmanager</td>
+<td><code>http://127.0.0.1:9093</code></td>
+</tr>
+</tbody>
+</table>
+<p>Grafana 用户名为 <code>admin</code>。在控制平面管理员终端读取现有密码：</p>
+<pre><code class="language-bash">kubectl -n monitoring get secret grafana-admin \
+  -o jsonpath='{.data.admin-password}' | base64 -d
+printf '\n'
+</code></pre>
+<p>浏览器和 Wi-Fi 保持原有 <code>10808</code> 代理设置。上述页面使用本地回环地址，通过 SSH 隧道连接监控服务。</p>
+<h2 id="chapter-4-8">Grafana 使用方法</h2>
+<p>登录后打开 Dashboards，查找 Kubernetes 和 Node Exporter 相关仪表盘。根据 Cluster、Namespace、Node、Workload 和 Pod 等筛选条件查看指标。常用内容包括节点 CPU 和内存、磁盘空间、网络吞吐、Pod 重启次数、工作负载副本状态，以及 CPU 和内存 requests 与 limits。</p>
+<p>本集群常用的仪表盘名称：</p>
+<ul>
+<li><code>Kubernetes / Compute Resources / Cluster</code></li>
+<li><code>Kubernetes / Compute Resources / Node (Pods)</code></li>
+<li><code>Kubernetes / Compute Resources / Namespace (Pods)</code></li>
+<li><code>Kubernetes / Compute Resources / Pod</code></li>
+<li><code>Node Exporter / Nodes</code></li>
+<li><code>Kubernetes / Networking / Cluster</code></li>
+<li><code>Kubernetes / Persistent Volumes</code></li>
+<li><code>etcd</code></li>
+<li><code>Prometheus / Overview</code></li>
+<li><code>Alertmanager / Overview</code></li>
+</ul>
+<p>Prometheus 数据源由 chart 自动配置。修改显示时间范围后，可以查看对应时间内的历史曲线；指标保留期限由 Prometheus 配置控制。</p>
+<h2 id="chapter-4-9">Prometheus 查询方法</h2>
+<p>打开 Query 页面输入 PromQL：</p>
+<pre><code class="language-promql">count(kube_node_info)
+</code></pre>
+<p>该查询返回集群节点数量。其他查询示例：</p>
+<pre><code class="language-promql">up
+</code></pre>
+<pre><code class="language-promql">100 * (1 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])))
+</code></pre>
+<pre><code class="language-promql">100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)
+</code></pre>
+<pre><code class="language-promql">sum by (namespace, pod) (rate(container_cpu_usage_seconds_total{container!="",container!="POD"}[5m]))
+</code></pre>
+<pre><code class="language-promql">sum by (namespace, pod) (container_memory_working_set_bytes{container!="",container!="POD"})
+</code></pre>
+<pre><code class="language-promql">sum by (namespace, pod) (kube_pod_container_status_restarts_total)
+</code></pre>
+<p>打开 Status 中的 Targets 检查采集状态和最近一次错误。<code>up = 1</code> 表示最近一次采集成功；查询窗口需要包含足够的样本，<code>rate(...[5m])</code> 才能形成曲线。</p>
+<h2 id="chapter-4-10">Alertmanager 使用方法</h2>
+<p>Prometheus 根据 PrometheusRule 执行告警表达式。条件持续达到规则中的 <code>for</code> 时长后，告警从 pending 转为 firing 并交给 Alertmanager。Alertmanager 页面可以查看标签、分组和静默条件。</p>
+<p>创建静默时填写精确的标签匹配、开始时间、结束时间和原因。静默只影响通知处理，Prometheus 中的规则仍然执行。chart 的 <code>Watchdog</code> 告警持续 firing，用于观察告警链路。</p>
+<h2 id="chapter-4-11">实际验收结果</h2>
+<table>
+<thead>
+<tr>
+<th>验收项目</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Helm release</td>
+<td><code>monitoring</code> 状态为 <code>deployed</code></td>
+</tr>
+<tr>
+<td>监控工作负载</td>
+<td>Grafana、Prometheus、Alertmanager、Operator、kube-state-metrics 和四个 node-exporter 就绪</td>
+</tr>
+<tr>
+<td>数据卷</td>
+<td>三个 PVC 全部 <code>Bound</code></td>
+</tr>
+<tr>
+<td>采集目标</td>
+<td>29 个目标全部为 <code>UP</code></td>
+</tr>
+<tr>
+<td>集群节点指标</td>
+<td><code>count(kube_node_info) = 4</code></td>
+</tr>
+<tr>
+<td>操作系统指标</td>
+<td><code>count(node_uname_info) = 4</code></td>
+</tr>
+<tr>
+<td>etcd 状态</td>
+<td><code>etcd_server_has_leader = 1</code></td>
+</tr>
+<tr>
+<td>Grafana 数据库</td>
+<td><code>/api/health</code> 返回 <code>database: ok</code></td>
+</tr>
+<tr>
+<td>Grafana 数据源</td>
+<td>Prometheus 数据源健康检查返回 <code>OK</code></td>
+</tr>
+<tr>
+<td>Grafana 仪表盘</td>
+<td>已加载 29 个仪表盘</td>
+</tr>
+<tr>
+<td>告警链路</td>
+<td>Prometheus 发现一个 Alertmanager，Alertmanager 收到 <code>Watchdog</code></td>
+</tr>
+<tr>
+<td>Helm 自带测试</td>
+<td>三项测试均为 <code>Succeeded</code></td>
+</tr>
+<tr>
+<td>Prometheus 持久化</td>
+<td>重建 Prometheus Pod 后，查询重启前时间点的 <code>kube_node_info</code> 仍返回四个节点</td>
+</tr>
+</tbody>
+</table>
+<p>持久化检查中的 Prometheus Pod UID：</p>
+<pre><code class="language-text">重启前：4218d3ae-5124-4433-9096-1fd0984efc7f
+重启后：dd0a9531-550d-479c-b658-ef26e05dcc4b
+</code></pre>
+<p>历史查询使用时间戳 <code>1793107219.463</code>：</p>
+<pre><code class="language-promql">count(kube_node_info @ 1793107219.463)
+</code></pre>
+<p>返回值为 <code>4</code>。随附 <code>validate.sh</code>、<code>verify-persistence.sh</code> 和验收记录用于复查采集、数据源、告警和存储状态。</p>
+<p>验证脚本在能够访问本地 <code>3000</code>、<code>9090</code>、<code>9093</code> 页面和 Kubernetes API 的部署机器上运行，需要 <code>kubectl</code>、<code>curl</code>、<code>jq</code> 和管理员 kubeconfig。使用绝对路径指定凭证：</p>
+<pre><code class="language-bash">KUBECONFIG=/完整路径/kubeconfig bash validate.sh
+</code></pre>
+<p><code>validate.sh</code> 将查询结果保存到脚本目录，包括 <code>node-count.json</code>。<code>verify-persistence.sh</code> 使用该文件记录的历史时间点，重建 Prometheus Pod 并检查历史数据，因此执行期间 Prometheus 会短暂中断服务。</p>
+<h2 id="chapter-4-12">日常检查</h2>
+<pre><code class="language-bash">kubectl -n monitoring get pods,pvc
+kubectl -n monitoring get prometheus,alertmanager
+kubectl -n monitoring logs deployment/monitoring-operator --tail=100
+kubectl -n monitoring get events --sort-by=.lastTimestamp
+kubectl top nodes
+</code></pre>
+<p>在各数据所在虚拟机检查磁盘：</p>
+<pre><code class="language-bash">df -h /
+sudo du -sh /var/lib/monitoring/*
+</code></pre>
+<p>修改配置时编辑 <code>values.yaml</code> 后执行同一条 <code>helm upgrade --install</code> 命令。更新 chart 版本前需要阅读对应版本的 CRD 和升级说明，并备份 Kubernetes 配置及持久数据。</p>
+<h2 id="chapter-4-13">官方资料</h2>
+<ul>
+<li><a href="https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack">kube-prometheus-stack 安装与配置</a></li>
+<li><a href="https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/values.yaml">kube-prometheus-stack 配置参数</a></li>
+<li><a href="https://docs.rke2.io/reference/server_config">RKE2 服务端配置</a></li>
+</ul></section>
+<section id="chapter-5" class="chapter"><h1 id="chapter-5-0">204 集群 Pod 项目实操学习手册</h1>
+<h2 id="chapter-5-1">环境和操作位置</h2>
+<p>四台 Ubuntu 虚拟机运行 RKE2：<code>rke2-server-1</code> 为控制平面，<code>rke2-worker-1/2/3</code> 为工作节点。每台虚拟机配置为 4 vCPU、4 GiB 内存、20 GiB 系统磁盘。全部虚拟机位于同一台物理宿主机，物理宿主机故障会影响整个实验环境。</p>
+<p>项目使用 <code>pod-lab</code> 命名空间。示例命令需要在已经配置集群管理员 kubeconfig 的终端执行。在控制平面上可以运行：</p>
+<pre><code class="language-bash">export PATH=/var/lib/rancher/rke2/bin:$PATH
+export KUBECONFIG=/etc/rancher/rke2/rke2.yaml
+kubectl get nodes
+kubectl -n pod-lab get pods -o wide
+</code></pre>
+<p>Mac 当前工作目录的配置位于 <code>work/monitoring/kubeconfig</code>，需要保持 SSH API 转发连接。本项目源码包提供全部 YAML、网页、脚本和验收脚本。</p>
+<p>本机页面入口为 <code>http://127.0.0.1:18084</code>。重新打开入口的命令：</p>
+<pre><code class="language-bash">kubectl -n pod-lab port-forward service/pod-web 18084:8080
+</code></pre>
+<p>此终端需要保持运行。port-forward 依赖选中的 Pod；删除该 Pod 后需要重新运行命令。</p>
+<h2 id="chapter-5-2">项目的组成</h2>
+<table>
+<thead>
+<tr>
+<th>对象</th>
+<th>名称</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Deployment</td>
+<td>pod-web</td>
+<td>维持两个 Pod，练习重建、扩容和滚动更新</td>
+</tr>
+<tr>
+<td>initContainer</td>
+<td>initialize</td>
+<td>初始化网页、计数器和探针文件</td>
+</tr>
+<tr>
+<td>普通容器</td>
+<td>server</td>
+<td>BusyBox httpd，监听 8080，提供网页与指标</td>
+</tr>
+<tr>
+<td>普通容器</td>
+<td>writer</td>
+<td>每两秒更新计数器、状态 JSON 和 Prometheus 指标</td>
+</tr>
+<tr>
+<td>普通容器</td>
+<td>inspector</td>
+<td>提供交互终端，查看共享进程和文件</td>
+</tr>
+<tr>
+<td>Service</td>
+<td>pod-web</td>
+<td>ClusterIP 服务发现，并提供 NodePort 30082</td>
+</tr>
+<tr>
+<td>StatefulSet</td>
+<td>notebook</td>
+<td>练习稳定名称和持久化存储</td>
+</tr>
+<tr>
+<td>PVC</td>
+<td>data-notebook-0</td>
+<td>保存笔记文件</td>
+</tr>
+<tr>
+<td>NetworkPolicy</td>
+<td>pod-web-ingress</td>
+<td>允许指定客户端和监控访问</td>
+</tr>
+<tr>
+<td>ServiceAccount</td>
+<td>learner</td>
+<td>仅具有项目资源的读取权限</td>
+</tr>
+<tr>
+<td>PDB</td>
+<td>pod-web</td>
+<td>自愿驱逐时至少保留一个可用 Pod</td>
+</tr>
+<tr>
+<td>ServiceMonitor</td>
+<td>pod-web</td>
+<td>Prometheus 采集项目心跳指标</td>
+</tr>
+</tbody>
+</table>
+<pre class="mermaid">flowchart LR
+  Browser[浏览器] --&gt; Forward[kubectl port-forward]
+  Forward --&gt; Server[server 容器]
+  Writer[writer 容器] --&gt; Data[emptyDir 共享目录]
+  Server --&gt; Data
+  Inspector[inspector 容器] --&gt; Data
+  Prometheus[Prometheus] --&gt; Service[pod-web Service]
+  Service --&gt; Server
+  Notebook[notebook Pod] --&gt; PVC[PVC]
+  PVC --&gt; Disk[worker-3 本地目录]
+</pre>
+<h2 id="chapter-5-3">实验一：识别 Pod 和容器</h2>
+<pre><code class="language-bash">kubectl -n pod-lab get deployment,pod,service
+POD=$(kubectl -n pod-lab get pod -l app=pod-web -o jsonpath='{.items[0].metadata.name}')
+kubectl -n pod-lab describe pod "$POD"
+kubectl -n pod-lab get pod "$POD" -o jsonpath='{.metadata.uid}{"\n"}{.status.containerStatuses}{"\n"}'
+</code></pre>
+<p>观察 <code>3/3 Running</code>，表示三个普通容器均就绪。initContainer 单独显示在初始化状态中。Pod 有自己的 UID，三个容器分别有自己的 containerID 和 restartCount。</p>
+<p>面试知识：Pod 是 Kubernetes 调度的基本单位。Deployment 通过 ReplicaSet 维持 Pod 数量。容器进程退出时 kubelet 根据重启策略处理；删除 Pod 后由上层控制器创建新的 Pod。</p>
+<h2 id="chapter-5-4">实验二：查看真实进程和 localhost 通信</h2>
+<pre><code class="language-bash">kubectl -n pod-lab exec "$POD" -c inspector -- ps
+kubectl -n pod-lab exec "$POD" -c inspector -- cat /data/writer.pid
+kubectl -n pod-lab exec "$POD" -c inspector -- wget -qO- http://127.0.0.1:8080/status.json
+kubectl -n pod-lab logs "$POD" -c writer --tail=10
+</code></pre>
+<p>本项目明确设置 <code>shareProcessNamespace: true</code>，因此 inspector 可以查看 writer 和 httpd 的进程。普通 Pod 默认不会在容器之间共享 PID 命名空间。相同 Pod 的容器共享网络命名空间，可以通过 localhost 通信。</p>
+<p>面试知识：相同 Pod 的容器共享 IP 和端口空间，同时监听同一个地址、端口会产生冲突。进程共享需要显式配置。启用进程共享时，业务进程通常不会成为 PID 1；不要随意终止 PID 1。</p>
+<h2 id="chapter-5-5">实验三：终止 writer，观察容器重启</h2>
+<pre><code class="language-bash">kubectl -n pod-lab get pod "$POD" -o jsonpath='{.metadata.uid}{"\n"}{.status.containerStatuses}{"\n"}'
+kubectl -n pod-lab exec "$POD" -c inspector -- sh -ec 'kill -TERM "$(cat /data/writer.pid)"'
+kubectl -n pod-lab get pod "$POD" -w
+kubectl -n pod-lab logs "$POD" -c writer --previous --tail=10
+</code></pre>
+<p>writer 的 restartCount 增加，Pod UID 保持一致，server 容器继续运行。<code>--previous</code> 查看该容器上一次实例的日志。共享目录中的计数器在容器重启后保留。</p>
+<h2 id="chapter-5-6">实验四：readiness 和 liveness</h2>
+<pre><code class="language-bash">kubectl -n pod-lab exec "$POD" -c inspector -- rm /data/ready
+kubectl -n pod-lab get pods
+kubectl -n pod-lab get endpointslice -l kubernetes.io/service-name=pod-web -o yaml
+kubectl -n pod-lab exec client-allowed -- wget -qO- -T 5 http://pod-web:8080/status.json
+kubectl -n pod-lab exec "$POD" -c inspector -- touch /data/ready
+kubectl -n pod-lab wait --for=condition=Ready pod/"$POD" --timeout=60s
+kubectl -n pod-lab exec "$POD" -c inspector -- rm /data/live
+kubectl -n pod-lab get pod "$POD" -w
+</code></pre>
+<p>readiness 文件删除后，该 Pod 暂时停止接收 Service 新流量，server 的 restartCount 保持一致。恢复文件后重新进入就绪状态。liveness 文件删除后，server 容器被重启；启动脚本会重新创建该文件。</p>
+<p>面试知识：startupProbe 保护慢启动；readinessProbe 控制是否接收流量；livenessProbe 控制是否重启容器。数据库短时不可达通常应影响应用 readiness。将数据库故障直接作为应用 liveness 失败条件，容易产生无效重启。</p>
+<h2 id="chapter-5-7">实验五：emptyDir 生命周期</h2>
+<pre><code class="language-bash">kubectl -n pod-lab exec "$POD" -c inspector -- touch /data/ephemeral-marker
+kubectl -n pod-lab delete pod "$POD"
+kubectl -n pod-lab rollout status deployment/pod-web --timeout=180s
+kubectl -n pod-lab get pods -l app=pod-web -o wide
+</code></pre>
+<p>重新取得新 Pod 名称，在 inspector 中检查 <code>/data/ephemeral-marker</code>。新 Pod 的 emptyDir 不包含原来的标记文件。initContainer 会为新 Pod 初始化新计数器。</p>
+<p>面试知识：emptyDir 与 Pod 生命周期相关，容器重启不会清除它，Pod 删除后数据会丢失。<code>emptyDir.medium: Memory</code> 使用内存，其写入可能计入容器内存使用量。</p>
+<h2 id="chapter-5-8">实验六：PVC 和 StatefulSet</h2>
+<pre><code class="language-bash">kubectl -n pod-lab exec notebook-0 -- sh -ec 'printf "完成 PVC 实验\n" &gt; /data/notes.txt'
+kubectl -n pod-lab get pvc
+kubectl -n pod-lab delete pod notebook-0
+kubectl -n pod-lab wait --for=condition=Ready pod/notebook-0 --timeout=180s
+kubectl -n pod-lab exec notebook-0 -- cat /data/notes.txt
+kubectl get pv pod-lab-notebook -o yaml
+</code></pre>
+<p>Pod 名称仍为 notebook-0，UID 发生变化，笔记内容保留。该实验使用 worker-3 上的 Local PV，具有节点亲和性；节点不可用时不能自动迁移原有磁盘数据。回收策略为 Retain，删除 PVC 后需要管理员处理保留的数据和 PV 状态。</p>
+<h2 id="chapter-5-9">实验七：DNS、Service、网络策略</h2>
+<pre><code class="language-bash">kubectl -n pod-lab exec client-allowed -- nslookup pod-web.pod-lab.svc.cluster.local
+kubectl -n pod-lab exec client-allowed -- wget -qO- -T 5 http://pod-web:8080/status.json
+kubectl -n pod-lab exec client-denied -- wget -qO- -T 3 http://pod-web:8080/status.json
+kubectl -n pod-lab get networkpolicy -o yaml
+</code></pre>
+<p>允许来源能够读取 JSON，未允许来源发生连接超时。NetworkPolicy 需要网络插件实际执行规则；本集群使用 Canal。排查网络问题时依次检查 Pod 就绪、标签选择器、EndpointSlice、DNS、网络策略和节点网络。</p>
+<h2 id="chapter-5-10">实验八：RBAC</h2>
+<pre><code class="language-bash">kubectl auth can-i list pods -n pod-lab --as=system:serviceaccount:pod-lab:learner
+kubectl auth can-i delete pods -n pod-lab --as=system:serviceaccount:pod-lab:learner
+kubectl auth can-i get secrets -n pod-lab --as=system:serviceaccount:pod-lab:learner
+</code></pre>
+<p>依次得到 yes、no、no。<code>--as</code> 需要当前操作账号拥有模拟身份的权限。RBAC 控制访问 Kubernetes API 的权限，NetworkPolicy 控制 Pod 的网络连接。</p>
+<h2 id="chapter-5-11">实验九：三类常见故障</h2>
+<p>在源码目录执行：</p>
+<pre><code class="language-bash">kubectl apply -f faults/
+kubectl -n pod-lab get pods -w
+kubectl -n pod-lab logs fault-crash --previous
+kubectl -n pod-lab describe pod fault-pending
+kubectl -n pod-lab get pod fault-oom -o jsonpath='{.status.containerStatuses[0].state.terminated}{"\n"}'
+kubectl -n pod-lab delete -f faults/
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>故障</th>
+<th>真实触发条件</th>
+<th>应检查的证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CrashLoopBackOff</td>
+<td>进程主动以退出码 7 结束</td>
+<td>previous 日志、lastState、restartCount</td>
+</tr>
+<tr>
+<td>Pending / Unschedulable</td>
+<td>nodeSelector 指定不存在的节点</td>
+<td>PodScheduled 条件、FailedScheduling 事件</td>
+</tr>
+<tr>
+<td>OOMKilled</td>
+<td>16 MiB 内存限制下向 tmpfs 写入大量数据</td>
+<td>terminated.reason、exitCode、内存限制</td>
+</tr>
+</tbody>
+</table>
+<p>CrashLoopBackOff 表示重启退避状态，本身不说明程序失败原因。Pending 需要检查调度约束、资源、PVC 和污点。退出码 137 单独不足以证明 OOM，应同时检查 OOMKilled 状态和系统证据。</p>
+<h2 id="chapter-5-12">实验十：扩容、Job、PDB 和监控</h2>
+<pre><code class="language-bash">kubectl -n pod-lab scale deployment/pod-web --replicas=3
+kubectl -n pod-lab rollout status deployment/pod-web
+kubectl -n pod-lab scale deployment/pod-web --replicas=2
+kubectl apply -f http-check.yaml
+kubectl -n pod-lab wait --for=condition=Complete job/http-check --timeout=90s
+kubectl -n pod-lab logs job/http-check
+kubectl -n pod-lab get pdb
+</code></pre>
+<p>Prometheus 查询 <code>pod_lab_heartbeats_total</code>。两个 Pod 的计数器分别增加，Pod 重建后对应序列发生变化。Grafana 中可使用 <code>rate(pod_lab_heartbeats_total[5m])</code> 查看更新速率。</p>
+<p>PDB 约束驱逐 API 等自愿中断；直接删除 Pod、节点突然断电等情况不受相同保护。Deployment 的滚动更新由其更新策略控制。</p>
+<h2 id="chapter-5-13">自动验收和学习顺序</h2>
+<p><code>verify.sh</code> 实际执行共享进程、localhost、DNS、网络策略、readiness、容器重启、RBAC、持久化、Pod 重建、Job 和扩缩容检查。<code>fault-drills.sh</code> 验证三类故障后清理故障 Pod。两份脚本均已在当前集群执行成功。</p>
+<p>建议依次完成：对象识别 → 日志与进程 → 三种探针 → emptyDir 与 PVC → Service 与 DNS → 网络策略与 RBAC → 故障定位 → 扩容与监控。每项实验记录操作命令、实际状态、相关事件及原理，再尝试仅根据故障现象选择检查命令。</p></section>
+<section id="chapter-6" class="chapter"><h1 id="chapter-6-0">204 Kubernetes 平台部署与学习流程</h1>
+<h2 id="chapter-6-1">网络、机器与操作边界</h2>
+<table>
+<thead>
+<tr>
+<th>地址</th>
+<th>身份</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10.100.1.91</td>
+<td>SSH 跳板机</td>
+<td>通过现有接入网络进入实验环境</td>
+</tr>
+<tr>
+<td>10.100.1.94</td>
+<td>204 物理宿主机</td>
+<td>运行 KVM 虚拟机、NFS、GitLab、镜像仓库和对象存储</td>
+</tr>
+<tr>
+<td>192.168.204.1</td>
+<td>宿主机实验网桥</td>
+<td>虚拟机访问宿主机服务</td>
+</tr>
+<tr>
+<td>192.168.204.11</td>
+<td>rke2-server-1</td>
+<td>控制平面、etcd</td>
+</tr>
+<tr>
+<td>192.168.204.12～14</td>
+<td>rke2-worker-1～3</td>
+<td>应用、监控、日志与发布管理组件</td>
+</tr>
+</tbody>
+</table>
+<p>四台虚拟机均为 4 vCPU、4 GiB 内存、20 GiB 系统磁盘。新增服务放在独立命名空间和 <code>/var/lib/interview-lab</code> 目录。原有宿主机业务容器保持独立运行。</p>
+<pre class="mermaid">flowchart LR
+  Mac[Mac 浏览器和终端] --&gt; SSH[SSH 跳板连接]
+  SSH --&gt; Host[204 宿主机]
+  Host --&gt; API[RKE2 API]
+  API --&gt; Pods[Kubernetes 工作负载]
+  Browser[学习任务页面] --&gt; Ingress[Traefik HTTPS]
+  Ingress --&gt; App[FastAPI 任务应用]
+  App --&gt; PG[PostgreSQL]
+  PG --&gt; NFS[NFS 动态存储]
+  Prometheus[Prometheus] --&gt; App
+  Alloy[Alloy 日志采集] --&gt; Loki[Loki]
+  Grafana[Grafana] --&gt; Prometheus
+  Grafana --&gt; Loki
+  GitLab[GitLab] --&gt; Runner[Kubernetes Runner]
+  Runner --&gt; Registry[TLS 镜像仓库]
+  Argo[Argo CD] --&gt; Pods
+  GitLab --&gt; Argo
+  Dump[PostgreSQL 逻辑备份] --&gt; BackupPVC[备份 PVC]
+  Velero[Velero] --&gt; BackupPVC
+  Velero --&gt; S3[SeaweedFS S3]
+</pre>
+<p>所有虚拟机和宿主机服务仍然依赖同一台物理机器。此环境用于学习部署和恢复流程，无法抵抗整台物理宿主机损坏。生产环境需要独立物理故障域，以及存放在其他机器或其他站点的备份。</p>
+<h2 id="chapter-6-2">接入和访问方法</h2>
+<p>在自己的终端配置授权网络和 SSH 接入。接入地址和认证信息由环境管理员提供。下面演示已经登录实验跳板机后进入宿主机、控制平面的方法，地址需要根据自己的网络修改：</p>
+<pre><code class="language-bash">ssh root@10.100.1.94
+ssh -i /var/lib/rke2-lab/id_ed25519 ubuntu@192.168.204.11
+sudo -i
+export PATH=/var/lib/rancher/rke2/bin:$PATH
+export KUBECONFIG=/etc/rancher/rke2/rke2.yaml
+kubectl get nodes
+</code></pre>
+<p>SSH 的 <code>-L</code> 把本地监听端口转发到远端目标，<code>-D</code> 提供 SOCKS 服务。<code>kubectl port-forward</code> 通过 Kubernetes API 转发到选中的 Pod。浏览器连接本机回环地址后，请求通过这些连接进入实验网络。</p>
+<p>系统 Wi-Fi 代理与这些 SSH 端口转发分别配置。运行学习项目不需要修改系统 DNS、Wi-Fi 代理、默认路由或者路由器限速设置。</p>
+<h2 id="chapter-6-3">部署文件和安装顺序</h2>
+<p>源码包中的目录对应以下职责：</p>
+<table>
+<thead>
+<tr>
+<th>目录或文件</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>host/</td>
+<td>NFS、独立 GitLab、TLS 仓库、对象存储及节点仓库信任配置</td>
+</tr>
+<tr>
+<td>charts/</td>
+<td>Helm values，明确服务副本数、存储和资源限制</td>
+</tr>
+<tr>
+<td>k8s/</td>
+<td>应用、证书、Runner、备份、恢复和演练清单</td>
+</tr>
+<tr>
+<td>app/</td>
+<td>任务系统源码、Dockerfile、依赖、真实集成测试和 CI 配置</td>
+</tr>
+<tr>
+<td>app/gitops/</td>
+<td>Argo CD 管理的应用 Deployment</td>
+</tr>
+<tr>
+<td>verify-application.py</td>
+<td>真实 HTTP、权限、数据库和 TLS 验收</td>
+</tr>
+<tr>
+<td>application-drills.py</td>
+<td>数据库故障与应用 Pod 重建演练</td>
+</tr>
+<tr>
+<td>verify-backup.py</td>
+<td>新命名空间、新卷和新数据库的备份恢复验证</td>
+</tr>
+<tr>
+<td>release-drill.sh</td>
+<td>错误镜像发布和配置修复演练</td>
+</tr>
+</tbody>
+</table>
+<p>部署顺序：现有 RKE2 和监控 → NFS 导出与 CSI → cert-manager → 私有 CA 和 TLS 仓库 → PostgreSQL 与应用 → HTTPS Ingress → Loki 与 Alloy → GitLab 与 Runner → Argo CD → Velero 和恢复演练。</p>
+<h2 id="chapter-6-4">NFS 动态存储</h2>
+<p>宿主机安装 NFS 服务，将 <code>/var/lib/interview-lab/nfs</code> 导出给 <code>192.168.204.0/24</code>。<code>host/setup-nfs.sh</code> 创建导出目录并启用服务。</p>
+<pre><code class="language-bash">sudo exportfs -v
+kubectl -n kube-system get pods -l app.kubernetes.io/instance=nfs
+kubectl get storageclass interview-nfs
+kubectl get pvc -A
+</code></pre>
+<p><code>csi-driver-nfs</code> 根据 PVC 创建独立子目录，StorageClass 使用 Retain 回收策略。PVC 的请求容量不等同于宿主机文件系统对每个目录实施容量配额，实际配额需要额外配置。</p>
+<p>面试知识：PV 描述可用存储，PVC 表达工作负载的存储申请，StorageClass 定义动态供应参数。ReadWriteOnce 主要约束节点挂载方式，不能直接当作“只允许一个 Pod 使用”。NFS 的多节点访问能力也不能替代数据库自身的主从复制。</p>
+<h2 id="chapter-6-5">私有镜像仓库和证书</h2>
+<p>仓库地址：<code>192.168.204.1:15000</code>。仓库启用 TLS 和 bcrypt htpasswd 认证。CA 私钥保存在宿主机专用目录；CA 公钥安装到本实验的 containerd 和 Docker 仓库信任目录。</p>
+<p>节点文件：</p>
+<pre><code class="language-text">/etc/rancher/rke2/registries.yaml
+/etc/rancher/rke2/interview-ca.crt
+</code></pre>
+<p>配置 CA 后重启对应的 rke2-server 或 rke2-agent，并等待节点恢复 Ready。应用命名空间的 imagePullSecret 提供仓库账号。</p>
+<p>面试知识：CA 信任解决服务器身份校验，仓库账号解决访问认证，imagePullPolicy 决定何时检查或下载镜像。ImagePullBackOff 应检查事件、镜像名称、网络、认证和 CA。证书问题通过正确的信任配置解决。</p>
+<h2 id="chapter-6-6">真实应用和数据库</h2>
+<p>任务系统使用 FastAPI、psycopg、PostgreSQL 和浏览器 JavaScript，提供登录、任务创建、查询、修改和删除。密码使用随机 salt 和 PBKDF2-HMAC-SHA256 验证；SQL 使用参数绑定。登录会话保存在数据库，Cookie 配置 HttpOnly 和 SameSite。</p>
+<p>学习账号为 <code>learner</code>，随机密码保存在单独的私有访问凭据文件中。系统仅用于本实验网络；公网服务还需要完善账号生命周期、请求限制和审计策略。</p>
+<pre><code class="language-bash">kubectl -n interview-app get pods,service,pvc,hpa,pdb
+kubectl -n interview-app logs deployment/tasks --tail=30
+kubectl -n interview-app logs deployment/postgres --tail=30
+kubectl -n interview-app port-forward service/tasks 18083:8080
+</code></pre>
+<p>打开本机 <code>http://127.0.0.1:18083</code> 登录并操作任务。刷新页面后观察请求结果中的 Pod 名称；port-forward 固定到某个 Pod，不能用这个入口证明 Service 已经平均分配请求。</p>
+<p>应用 <code>/livez</code> 检查进程是否存活，<code>/readyz</code> 检查数据库连接，<code>/metrics</code> 提供真实 HTTP 请求计数。数据库使用单副本和持久化 PVC，应用使用两个副本。</p>
+<p>数据库故障演练：缩容 postgres 到零，确认应用退出就绪状态且现有应用容器保持存活；恢复 postgres 后确认就绪恢复和原有任务数据存在。执行源码包的 <code>application-drills.py</code> 自动验证这些条件。</p>
+<h2 id="chapter-6-7">HTTPS Ingress 和证书续期</h2>
+<p>cert-manager 的 ClusterIssuer 使用本实验 CA 签发 <code>tasks-tls</code>。Traefik 根据 Host <code>tasks.204.test</code> 将 HTTPS 请求交给 tasks Service。</p>
+<pre><code class="language-bash">kubectl get clusterissuer interview-ca
+kubectl -n interview-app get certificate tasks-tls
+kubectl -n interview-app describe certificate tasks-tls
+kubectl -n interview-app get ingress tasks
+</code></pre>
+<p>本机 HTTPS 转发端口为 18443，命令行可以显式指定解析和 CA：</p>
+<pre><code class="language-bash">curl --cacert ca.crt \
+  --resolve tasks.204.test:18443:127.0.0.1 \
+  https://tasks.204.test:18443/readyz
+</code></pre>
+<p>证书有效期为 90 天，提前 15 天续期。Certificate 状态包含到期和下一次续期时间，验收同时检查实际 TLS 主机名和 CA 链。浏览器若使用该私有 CA，需要自行建立对该 CA 的信任。</p>
+<h2 id="chapter-6-8">指标和日志</h2>
+<p>Prometheus、Grafana、Alertmanager、node-exporter 和 kube-state-metrics 继续使用现有部署。任务系统和 Pod 项目通过 ServiceMonitor 加入采集。</p>
+<p>Prometheus 学习查询：</p>
+<pre><code class="language-promql">up
+learning_http_requests_total
+sum by (status) (rate(learning_http_requests_total[5m]))
+pod_lab_heartbeats_total
+sum by (pod) (rate(container_cpu_usage_seconds_total{namespace="interview-app",container="tasks"}[5m]))
+kube_deployment_status_replicas_available{namespace="interview-app"}
+</code></pre>
+<p>Alloy 从 Kubernetes 容器日志 API 采集日志并写入 Loki，Grafana 的 Loki 数据源地址为 <code>http://loki-gateway.logging.svc.cluster.local</code>。Alloy 会读取集群容器日志，其 ServiceAccount 的权限范围应纳入生产环境权限评估。</p>
+<p>Grafana Explore 中选择 Loki，查询：</p>
+<pre><code class="language-logql">{namespace="interview-app",container="tasks"}
+{namespace="pod-lab",container="writer"}
+</code></pre>
+<p>先执行一次真实登录或创建任务，再确认日志中存在对应请求。Loki 单副本保存七天日志，数据位于 worker-2 上的 Local PV，WAL 使用本地文件系统。Loki 的调度受 PV 节点亲和性约束。</p>
+<h2 id="chapter-6-9">HPA、PDB 和错误发布</h2>
+<p>应用 HPA 根据 CPU 使用率扩缩容，目标为 requests 的 50%，最少两个、最多四个副本。计算目标依赖容器 CPU requests 和 Metrics Server。</p>
+<pre><code class="language-bash">kubectl -n interview-app top pods
+kubectl -n interview-app get hpa tasks -w
+kubectl -n interview-app describe hpa tasks
+</code></pre>
+<p>负载 Job 持续三分钟，通过集群 Service 发出真实登录请求。PBKDF2 密码验证产生实际 CPU 消耗，观察 HPA 的 desiredReplicas、当前副本数、CPU 指标和 SuccessfulRescale 事件。负载结束后等待缩容稳定窗口。</p>
+<p>PDB 设置 minAvailable=1，用于限制自愿驱逐。更新策略设置 maxUnavailable=0、maxSurge=1。<code>release-drill.sh</code> 暂停 Argo CD 自动同步，发布一个不存在的镜像，验证旧副本仍然可用，再恢复演练前的实际镜像版本并重新启用自动同步。</p>
+<p>面试知识：HPA 调整副本数量，调度器为新 Pod 选择节点；requests 参与调度和 CPU 利用率计算，limits 约束实际资源使用。错误镜像发布时应检查 Deployment 条件、ReplicaSet、Pod 事件和可用副本数。</p>
+<h2 id="chapter-6-10">GitLab CI、Runner 和 Argo CD</h2>
+<p>GitLab CE 在宿主机专用容器运行，实验网桥监听端口 18080。Runner 使用 Kubernetes executor，每个 CI Job 创建临时 Pod。Runner 的 API 权限限制在 <code>ci</code> 命名空间，CI 工作 Pod 使用独立 ServiceAccount。</p>
+<p>流水线包含两个阶段：</p>
+<ol>
+<li>integration：通过真实 HTTP 登录并对 PostgreSQL 数据完成创建、读取、修改、删除和未登录拒绝检查。</li>
+<li>build：使用 rootless BuildKit 构建镜像，验证仓库 CA，并推送 <code>learning/tasks:1.0.1</code>。</li>
+</ol>
+<p>构建依赖和 Python 基础镜像保存在内部仓库或项目依赖目录中。CI 不挂载宿主机 Docker socket。rootless BuildKit 的运行环境需要允许其使用所需的用户命名空间和进程操作，相关配置位于 Runner 模板。</p>
+<p>Argo CD 读取仓库 <code>root/learning-tasks</code> 的 main 分支，管理 <code>gitops/</code> 中的 tasks Deployment，并启用自动同步和配置漂移修复。HPA 管理 replicas，Argo CD 对该字段配置忽略规则，避免两个控制器反复修改副本数。</p>
+<pre><code class="language-bash">kubectl -n ci get pods
+kubectl -n ci logs deployment/gitlab-runner --tail=50
+kubectl -n argocd get application learning-tasks
+kubectl -n argocd describe application learning-tasks
+</code></pre>
+<p>学习时修改代码、执行真实测试、构建新镜像标签，再手动编辑 GitOps 文件中的镜像版本并提交。通过 GitLab 查看流水线日志，通过 Argo CD 查看提交版本、同步状态和实际资源差异。配置修复使用明确的文件编辑和新提交。</p>
+<h2 id="chapter-6-11">PostgreSQL 逻辑备份与 Velero 恢复</h2>
+<p><code>backup-lab</code> 命名空间的 CronJob 每六小时执行一次 pg_dump，将逻辑备份写入 <code>database-dumps</code> PVC。Velero 在备份生成半小时后，把该命名空间的资源和文件内容备份到 SeaweedFS S3，保留七天。</p>
+<p>直接复制运行中的数据库数据目录，无法替代数据库一致性备份。本环境使用 pg_dump 生成可以交给 pg_restore 的逻辑备份文件。</p>
+<pre><code class="language-bash">kubectl -n backup-lab get cronjob,job,pvc,pod
+kubectl -n velero get backupstoragelocation
+kubectl -n velero get backup,restore,podvolumebackup,podvolumerestore
+kubectl -n velero logs deployment/velero --tail=60
+</code></pre>
+<p><code>verify-backup.py</code> 的验收过程：生成实际 dump → 执行 Velero 文件备份 → 恢复到 <code>backup-restored</code> → 比较 SHA256 → 确认源 PVC 与恢复 PVC 使用不同 PV → 创建新的 PostgreSQL 数据卷 → pg_restore → 查询原来的业务验收记录。</p>
+<p>备份与恢复都必须达到 Completed，文件摘要一致且新数据库能够查询到记录，才能确认这一恢复链路有效。</p>
+<h2 id="chapter-6-12">面试讲解练习</h2>
+<table>
+<thead>
+<tr>
+<th>问题</th>
+<th>回答时应结合的实际证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>容器退出与 Pod 重建有什么区别？</td>
+<td>restartCount、containerID、Pod UID、ReplicaSet ownerReferences</td>
+</tr>
+<tr>
+<td>readiness 失败后流量如何变化？</td>
+<td>Ready 条件、EndpointSlice、Service 实际请求</td>
+</tr>
+<tr>
+<td>为什么数据库故障没有触发应用反复重启？</td>
+<td>/livez 与 /readyz 的依赖边界、容器重启次数</td>
+</tr>
+<tr>
+<td>ImagePullBackOff 如何定位？</td>
+<td>镜像名称、拉取事件、仓库认证、证书链和网络连接</td>
+</tr>
+<tr>
+<td>HPA 为什么没有扩容？</td>
+<td>Metrics Server、CPU requests、目标指标、扩容事件、最大副本数</td>
+</tr>
+<tr>
+<td>PDB 能否防止所有停机？</td>
+<td>驱逐 API、自愿中断、节点故障和直接删除行为</td>
+</tr>
+<tr>
+<td>ConfigMap 与 Secret 如何更新？</td>
+<td>文件挂载和环境变量的更新方式、应用重新加载机制</td>
+</tr>
+<tr>
+<td>NFS PVC 是否实现数据库高可用？</td>
+<td>存储共享与数据库复制的职责、单副本限制</td>
+</tr>
+<tr>
+<td>CI 和 GitOps 分别负责什么？</td>
+<td>测试构建推送日志、Git 声明配置、Argo 同步状态</td>
+</tr>
+<tr>
+<td>如何证明备份可以恢复？</td>
+<td>新命名空间、新 PV、备份摘要、实际恢复后的业务查询</td>
+</tr>
+<tr>
+<td>如何避免泄露密码？</td>
+<td>私有凭据文件、Kubernetes Secret、CI masked variable、源码包排除认证文件</td>
+</tr>
+</tbody>
+</table>
+<p>学习时先复述请求经过的完整路径，再展示相关 Kubernetes 对象和实际日志，最后解释故障触发条件与恢复结果。</p></section>
+<section id="chapter-7" class="chapter"><h1 id="chapter-7-0">项目验收与学习任务</h1>
+<h2 id="chapter-7-1">实际运行结果</h2>
+<p>验收日期：2026 年 10 月 28 日，Asia/Shanghai。</p>
+<table>
+<thead>
+<tr>
+<th>检查项目</th>
+<th>结果和证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RKE2 节点</td>
+<td>四个节点 Ready，全部可调度，DiskPressure=False</td>
+</tr>
+<tr>
+<td>活动 Pod</td>
+<td>65 个全部 Running 且容器 Ready</td>
+</tr>
+<tr>
+<td>Prometheus</td>
+<td>36 个采集目标全部 UP</td>
+</tr>
+<tr>
+<td>Pod 指标</td>
+<td>两条真实心跳序列，HTTP 使用 text/plain Content-Type</td>
+</tr>
+<tr>
+<td>任务系统</td>
+<td>登录、未登录拒绝、PostgreSQL 增删改查通过</td>
+</tr>
+<tr>
+<td>HTTPS</td>
+<td>CA 链和主机名校验通过</td>
+</tr>
+<tr>
+<td>日志</td>
+<td>Loki 查询返回任务应用和 writer 的真实日志，Grafana 数据源健康检查通过</td>
+</tr>
+<tr>
+<td>容器与 Pod 生命周期</td>
+<td>容器重启、Pod 重建、emptyDir 和 PVC 行为通过</td>
+</tr>
+<tr>
+<td>权限与网络</td>
+<td>RBAC 允许读取、拒绝删除；NetworkPolicy 允许客户端成功、未允许客户端超时</td>
+</tr>
+<tr>
+<td>探针与告警</td>
+<td>数据库停止后应用退出就绪状态，存活容器保持运行，真实告警触发；恢复后告警解除</td>
+</tr>
+<tr>
+<td>错误发布</td>
+<td>不存在的镜像无法完成 rollout，旧副本保持可用；修正配置后恢复</td>
+</tr>
+<tr>
+<td>HPA</td>
+<td>2,561 次真实登录请求，观察到四个可用副本，负载结束后自动恢复两个副本</td>
+</tr>
+<tr>
+<td>PDB 与维护</td>
+<td>通过驱逐 API 维护 Pod 项目，Service 可用，节点恢复调度</td>
+</tr>
+<tr>
+<td>GitLab CI</td>
+<td>流水线 2，integration 和 build 均 success</td>
+</tr>
+<tr>
+<td>构建镜像</td>
+<td><code>learning/tasks:1.0.1</code>，真实 rootless BuildKit 构建并推送</td>
+</tr>
+<tr>
+<td>Argo CD</td>
+<td>Synced / Healthy，同步提交 <code>d85609f3d674c4ebc4f02a75029434ab978f4b3d</code></td>
+</tr>
+<tr>
+<td>备份恢复</td>
+<td>Velero Backup 和 Restore 均 Completed，使用不同 PV，文件 SHA256 一致</td>
+</tr>
+<tr>
+<td>数据库恢复</td>
+<td>新 PostgreSQL 数据卷通过 pg_restore 恢复业务记录，查询到验收记录</td>
+</tr>
+</tbody>
+</table>
+<h2 id="chapter-7-2">第一组：理解请求的完整路径</h2>
+<p>打开任务系统，登录并创建一条自己的学习任务。记录页面显示的 Pod 名称。在终端分别查看 Service、EndpointSlice、Deployment、ReplicaSet 和 Pod，解释这些对象如何共同完成请求。</p>
+<p>提交给自己的学习记录：请求入口、转发端口、Service 端口、容器端口、Pod IP、所在节点，以及数据库访问路径。</p>
+<h2 id="chapter-7-3">第二组：通过现象定位故障</h2>
+<p>按照 Pod 手册依次制造进程退出、readiness 失败、liveness 失败、Pending 和 OOM。每次操作前先写下预期结果，再用日志、describe、事件和容器状态验证。</p>
+<p>检查自己能否解释：为什么容器重启后 Pod UID 保持一致；为什么 readiness 失败后没有立即重启容器；为什么删除 Pod 后 emptyDir 内容消失；为什么 PVC 内容保留。</p>
+<h2 id="chapter-7-4">第三组：理解资源和扩容</h2>
+<p>在源码中找到 CPU requests、CPU limits、HPA 目标和最大副本数。观察负载期间的 CPU、期望副本数和可用副本数，说明 HPA 调整副本数量与调度器安排节点的关系。</p>
+<p>学习记录中保留负载前、负载期间和负载结束后的三组指标。将实际观察与 <code>hpa-evidence.json</code>、HPA 验收日志进行比较。</p>
+<h2 id="chapter-7-5">第四组：完成一次源码发布</h2>
+<p>在任务系统网页中添加一条明确的学习说明，执行真实集成测试，使用新的镜像版本标签构建。手动编辑 CI 和 GitOps 配置中的版本号并提交，查看 GitLab 流水线、镜像仓库和 Argo CD 状态。</p>
+<p>确认三个位置的一致性：Git 提交版本、Argo CD 同步版本、Deployment 实际镜像。对比发布前后的 Pod UID 和容器镜像。</p>
+<h2 id="chapter-7-6">第五组：验证备份的含义</h2>
+<p>查看 <code>backup-lab</code> 中的 dump 文件及其生成时间，查看 Velero Backup 的完成时间。进入 <code>backup-restored</code> 的新数据库查询恢复数据，并确认恢复卷与源卷的 PV 名称不同。</p>
+<p>学习记录中说明：为什么文件复制无法替代运行中数据库的一致性备份；为什么需要新卷验证恢复；每六小时备份一次会带来多长的数据恢复时间范围；物理宿主机故障时哪些数据仍然受到影响。</p>
+<h2 id="chapter-7-7">原始证据文件</h2>
+<ul>
+<li>平台最终验收记录和 JSON 详情。</li>
+<li>Pod 项目验收、故障演练和 PDB 驱逐记录。</li>
+<li>应用 HTTP 验收、数据库故障和错误发布演练记录。</li>
+<li>HPA 负载验收记录及指标快照。</li>
+<li>GitLab 集成测试、镜像构建日志和流水线结果。</li>
+<li>Velero 备份恢复记录与 Loki 查询结果。</li>
+</ul>
+<p>公共源码包包含配置和脚本，私有访问凭据单独保存。安装脚本用于新建环境；在当前环境学习时，优先使用各章节中的查看、业务操作和指定故障演练命令。</p></section></main>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
+<script>
+mermaid.initialize({startOnLoad:true,securityLevel:'strict',theme:'neutral'});
+document.querySelector('#print').addEventListener('click',()=>window.print());
+document.querySelector('#search').addEventListener('input',event=>{const query=event.target.value.trim().toLowerCase();let count=0;document.querySelectorAll('.chapter').forEach(section=>{section.hidden=!!query&&!section.textContent.toLowerCase().includes(query);if(!section.hidden)count++;});document.querySelector('#search-status').textContent=`显示 ${count} / 7 篇教程`;});
+document.querySelectorAll('pre:not(.mermaid)').forEach(block=>{const button=document.createElement('button');button.className='copy';button.textContent='复制命令';button.addEventListener('click',async()=>{await navigator.clipboard.writeText(block.querySelector('code').textContent);button.textContent='已经复制';setTimeout(()=>button.textContent='复制命令',1500);});block.prepend(button);});
+document.querySelectorAll('nav a').forEach(link=>link.addEventListener('click',()=>{document.querySelector('#search').value='';document.querySelectorAll('.chapter').forEach(section=>section.hidden=false);document.querySelector('#search-status').textContent='';}));
+</script>
+</body></html>
