@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: bbt-tasks-dev
+  namespace: argocd
+spec:
+  sourceRepos: [https://gitlab.bbt.example.com/bbt/tasks-gitops.git]
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: tasks-dev
+  clusterResourceWhitelist: []
+  namespaceResourceWhitelist:
+    - {group: apps, kind: Deployment}
+    - {group: "", kind: Service}
+    - {group: "", kind: ServiceAccount}
+    - {group: policy, kind: PodDisruptionBudget}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: bbt-tasks-dev
+  namespace: argocd
+spec:
+  project: bbt-tasks-dev
+  source:
+    repoURL: https://gitlab.bbt.example.com/bbt/tasks-gitops.git
+    targetRevision: main
+    path: chart
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: tasks-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions: [PruneLast=true]

@@ -1,0 +1,59 @@
+{{- $digest := required "填写通过候选测试的 image.digest" .Values.image.digest -}}
+{{- if not (regexMatch "^sha256:[0-9a-f]{64}$" $digest) -}}
+{{- fail "image.digest 必须是有效的 sha256 镜像摘要" -}}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tasks
+spec:
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: 5
+  progressDeadlineSeconds: 180
+  strategy:
+    rollingUpdate: {maxUnavailable: 0, maxSurge: 1}
+  selector:
+    matchLabels: {app: tasks}
+  template:
+    metadata:
+      labels: {app: tasks}
+    spec:
+      serviceAccountName: tasks
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      imagePullSecrets:
+        - name: {{ .Values.imagePullSecret }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: tasks
+          image: {{ printf "%s@%s" .Values.image.repository $digest | quote }}
+          imagePullPolicy: IfNotPresent
+          ports: [{name: http, containerPort: 8080}]
+          envFrom:
+            - secretRef:
+                name: {{ .Values.applicationSecret }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          startupProbe:
+            httpGet: {path: /livez, port: http}
+            periodSeconds: 3
+            failureThreshold: 40
+          readinessProbe:
+            httpGet: {path: /readyz, port: http}
+            periodSeconds: 3
+            failureThreshold: 2
+          livenessProbe:
+            httpGet: {path: /livez, port: http}
+            periodSeconds: 5
+          lifecycle:
+            preStop:
+              exec:
+                command: [/bin/sh, -c, sleep 5]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}

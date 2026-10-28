@@ -1,0 +1,20 @@
+{
+  "commit": "local-candidate-check",
+  "checks": [
+    "candidate_version",
+    "authentication",
+    "postgresql_crud"
+  ],
+  "passed": true,
+  "image_digest": "sha256:798d3c7c2d841062a6ade4b791a8e8496c4f603b1844ff0a08fbbfd14cea5f7c",
+  "image_repository": "127.0.0.1:18769/bbt-cicd-candidate",
+  "registry_push_verified": true,
+  "execution_scope": "本地独立数据库与候选镜像；没有触发 BBT GitLab 或 Kubernetes 发布",
+  "gitops_helm_objects_checked": 4,
+  "platform_objects_checked": 12,
+  "empty_digest_rejected": true,
+  "pipeline_yaml_and_runner_toml": "parsed",
+  "interview_questions": 20,
+  "target_gitlab_pipeline_triggered": false,
+  "target_kubernetes_deployment_performed": false
+}

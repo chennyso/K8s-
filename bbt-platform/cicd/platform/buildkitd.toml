@@ -1,0 +1,2 @@
+[registry."registry.bbt.example.com"]
+  ca = ["/etc/buildkit/registry-ca.crt"]

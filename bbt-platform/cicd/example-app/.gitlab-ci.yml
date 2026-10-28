@@ -1,0 +1,73 @@
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - when: never
+
+stages: [source-test, build, candidate-test]
+
+source_test:
+  stage: source-test
+  tags: [bbt-test]
+  image: python:3.13-slim-bookworm
+  services:
+    - name: postgres:18-bookworm
+      alias: postgres
+  variables:
+    POSTGRES_DB: ci_tasks
+    POSTGRES_USER: ci_user
+    POSTGRES_PASSWORD: "$CI_TEST_DB_PASSWORD"
+    DATABASE_URL: "postgresql://ci_user:${CI_TEST_DB_PASSWORD}@postgres:5432/ci_tasks"
+    APP_VERSION: "$CI_COMMIT_SHA"
+    EXPECTED_COMMIT: "$CI_COMMIT_SHA"
+  script:
+    - python -m venv .venv
+    - .venv/bin/python -m pip install --disable-pip-version-check -r requirements.txt
+    - .venv/bin/python ci/candidate_test.py
+  artifacts:
+    paths: [test-report.json]
+    expire_in: 7 days
+
+build_image:
+  stage: build
+  tags: [bbt-build]
+  image:
+    name: moby/buildkit:v0.25.1-rootless
+    entrypoint: [""]
+  variables:
+    BUILDKITD_FLAGS: --oci-worker-no-process-sandbox --config /etc/buildkit/buildkitd.toml
+  script:
+    - sh ci/build.sh
+  artifacts:
+    paths: [build-metadata.json]
+    expire_in: 30 days
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+
+candidate_test:
+  stage: candidate-test
+  tags: [bbt-test]
+  image:
+    name: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA-$CI_PIPELINE_ID"
+    entrypoint: [""]
+  services:
+    - name: postgres:18-bookworm
+      alias: postgres
+  variables:
+    GIT_STRATEGY: none
+    POSTGRES_DB: ci_tasks
+    POSTGRES_USER: ci_user
+    POSTGRES_PASSWORD: "$CI_TEST_DB_PASSWORD"
+    DATABASE_URL: "postgresql://ci_user:${CI_TEST_DB_PASSWORD}@postgres:5432/ci_tasks"
+    EXPECTED_COMMIT: "$CI_COMMIT_SHA"
+  needs:
+    - job: build_image
+      artifacts: true
+  script:
+    - python /app/ci/candidate_test.py
+    - python /app/ci/release_metadata.py
+  artifacts:
+    paths: [test-report.json, release.json]
+    expire_in: 30 days
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'

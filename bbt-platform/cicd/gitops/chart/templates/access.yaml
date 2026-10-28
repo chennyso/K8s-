@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tasks
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tasks
+spec:
+  selector: {app: tasks}
+  ports:
+    - {name: http, port: 8080, targetPort: http}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: tasks
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: {app: tasks}

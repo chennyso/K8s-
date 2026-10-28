@@ -11,4 +11,5 @@ helm pull oci://ghcr.io/slinkyproject/charts/slurm-operator --version 1.1.0 --de
 helm pull oci://ghcr.io/slinkyproject/charts/slurm --version 1.1.0 --destination charts
 helm pull oci://quay.io/jetstack/charts/cert-manager --version 1.21.3 --destination charts
 helm pull kube-prometheus-stack --repo https://prometheus-community.github.io/helm-charts --version 92.14.0 --destination charts
+helm pull argo-cd --repo https://argoproj.github.io/argo-helm --version 10.11.6 --destination charts
 sha256sum charts/*.tgz > charts/SHA256SUMS

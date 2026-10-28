@@ -2,6 +2,8 @@
 
 [在线阅读](https://chennyso.github.io/K8s-/)
 
+[Kubernetes CI/CD 完整流程（Markdown）](bbt-platform/cicd/README.md)：代码提交、源码测试、BuildKit、候选镜像验证、GitOps 审核、Argo CD、滚动更新与业务验收。
+
 [BBT 平台从零构建：网络、存储、权限、调度与面试问答（Markdown）](bbt-platform/README.md)。配套提供 RKE2、Calico、NFS、JuiceFS、Rancher、RBAC、Volcano、SLURM、监控配置和计算示例。
 
 [四节点 RKE2 与完整项目实战教程](learning-lab/index.html)：从虚拟机、集群安装到 Pod 进程实验、任务系统、监控、日志、CI、GitOps 和备份恢复。配套源码位于 `learning-lab/`，公开文件范围与运行注意事项见该目录 README。

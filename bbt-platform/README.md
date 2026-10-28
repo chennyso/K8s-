@@ -1,5 +1,7 @@
 # BBT 平台从零构建：网络、存储、权限、调度、运行与面试
 
+[Kubernetes CI/CD 完整流程：提交、测试、镜像、GitOps、Argo CD 与发布验收](cicd/README.md)。这一章集中解释代码怎样变成集群中的新版本，并提供流水线、候选镜像测试和部署配置。
+
 ## 1．项目要建成什么样
 
 实验室有多个课题组，共享 CPU、GPU、存储和网络。学生希望提交程序并拿到结果；导师希望管理本组成员和任务；管理员需要控制总资源、维护服务器并处理故障。
@@ -68,6 +70,7 @@ python3 --version
 | Slinky charts | 1.1.0 | operator-crds、operator、slurm 三个包 |
 | SLURM 镜像 | 25.11-ubuntu24.04 | 控制器、计算节点与客户端配套使用 |
 | kube-prometheus-stack | 92.14.0 | Prometheus、Grafana、Alertmanager 等 |
+| Argo CD chart | 10.11.6 | CI/CD 章节中的 GitOps 部署控制器 |
 
 Helm 能成功渲染，只能证明清单生成完成。内核、GPU 驱动、网络、Webhook、存储及应用运行，还要在目标环境逐项验收。
 

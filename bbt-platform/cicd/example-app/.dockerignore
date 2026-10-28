@@ -1,0 +1,7 @@
+.git
+private
+.docker
+*.log
+*.json
+__pycache__
+.venv

@@ -1,0 +1,7 @@
+external_url 'https://gitlab.bbt.example.com'
+registry_external_url 'https://registry.bbt.example.com'
+letsencrypt['enable'] = false
+nginx['ssl_certificate'] = '/etc/gitlab/ssl/gitlab.bbt.example.com.crt'
+nginx['ssl_certificate_key'] = '/etc/gitlab/ssl/gitlab.bbt.example.com.key'
+registry_nginx['ssl_certificate'] = '/etc/gitlab/ssl/registry.bbt.example.com.crt'
+registry_nginx['ssl_certificate_key'] = '/etc/gitlab/ssl/registry.bbt.example.com.key'
