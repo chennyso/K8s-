@@ -1,0 +1,15 @@
+services:
+  redis:
+    image: redis:7.4.2
+    restart: unless-stopped
+    command: [redis-server, --appendonly, "yes", --requirepass, "${REDIS_PASSWORD:?请提供私有环境变量文件}"]
+    ports: ["172.20.10.30:6379:6379"]
+    volumes: ["./redis-data:/data"]
+  s3:
+    image: chrislusf/seaweedfs:4.50
+    restart: unless-stopped
+    command: [server, -dir=/data, -ip=storage.bbt.example.com, -ip.bind=0.0.0.0, -filer, -s3, -s3.port=8333, -s3.config=/run/secrets/s3.json]
+    ports: ["172.20.10.30:8333:8333"]
+    volumes:
+      - ./seaweed-data:/data
+      - ./private/s3.json:/run/secrets/s3.json:ro

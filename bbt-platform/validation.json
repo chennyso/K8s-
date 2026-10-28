@@ -1,0 +1,17 @@
+{
+  "helm_charts_rendered": 10,
+  "standard_objects_schema_checked": 298,
+  "crd_objects_schema_checked": 54,
+  "needs_target_cluster_schema": [
+    "crd.projectcalico.org/v1/BGPConfiguration",
+    "crd.projectcalico.org/v1/BGPPeer",
+    "helm.cattle.io/v1/HelmChartConfig",
+    "k8s.cni.cncf.io/v1/NetworkAttachmentDefinition"
+  ],
+  "bash_blocks_syntax_checked": 34,
+  "compose_configs_checked": 2,
+  "interview_questions": 35,
+  "private_file_permissions": "0600",
+  "secrets_check": "passed",
+  "production_deployment_performed": false
+}

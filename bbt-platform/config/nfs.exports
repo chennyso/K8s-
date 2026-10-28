@@ -1,0 +1,1 @@
+/exports/bbt 172.20.10.0/24(rw,sync,no_subtree_check,root_squash,anonuid=1000,anongid=1000)

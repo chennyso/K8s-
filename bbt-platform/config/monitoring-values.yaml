@@ -1,0 +1,50 @@
+fullnameOverride: monitoring
+kubeEtcd:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeProxy:
+  enabled: false
+grafana:
+  admin:
+    existingSecret: grafana-admin
+  persistence:
+    enabled: true
+    existingClaim: grafana-data
+  initChownData:
+    enabled: false
+  resources:
+    requests: {cpu: 100m, memory: 256Mi}
+    limits: {cpu: "1", memory: 1Gi}
+prometheus:
+  prometheusSpec:
+    retention: 7d
+    retentionSize: 8GB
+    resources:
+      requests: {cpu: 500m, memory: 1Gi}
+      limits: {cpu: "2", memory: 4Gi}
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: monitoring-local
+          accessModes: [ReadWriteOnce]
+          selector:
+            matchLabels: {monitoring-volume: prometheus}
+          resources:
+            requests: {storage: 10Gi}
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests: {cpu: 100m, memory: 128Mi}
+      limits: {cpu: 500m, memory: 512Mi}
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: monitoring-local
+          accessModes: [ReadWriteOnce]
+          selector:
+            matchLabels: {monitoring-volume: alertmanager}
+          resources:
+            requests: {storage: 1Gi}

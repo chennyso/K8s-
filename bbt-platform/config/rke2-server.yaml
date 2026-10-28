@@ -1,0 +1,18 @@
+node-name: cp1
+node-ip: 172.20.10.11
+advertise-address: 172.20.10.11
+tls-san:
+  - api.bbt.example.com
+  - 172.20.10.10
+cluster-cidr: 10.44.0.0/16
+service-cidr: 10.45.0.0/16
+cluster-dns: 10.45.0.10
+cluster-domain: sspu.local
+cni: [multus, calico]
+ingress-controller: traefik
+write-kubeconfig-mode: "0600"
+secrets-encryption-provider: aescbc
+etcd-snapshot-schedule-cron: "0 */6 * * *"
+etcd-snapshot-retention: 14
+node-taint:
+  - node-role.kubernetes.io/control-plane=true:NoSchedule

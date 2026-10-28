@@ -1,0 +1,17 @@
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: hpc-job-normal
+value: 500
+globalDefault: false
+preemptionPolicy: Never
+description: 课题组普通计算任务
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: gpu-job-high
+value: 2000
+globalDefault: false
+preemptionPolicy: Never
+description: GPU 计算任务的排队优先级

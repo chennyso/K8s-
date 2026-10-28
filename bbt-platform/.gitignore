@@ -1,0 +1,10 @@
+private/
+**/private/
+work/
+*.key
+*.log
+*.pyc
+**/__pycache__/
+redis-data/
+seaweed-data/
+keycloak-postgres/

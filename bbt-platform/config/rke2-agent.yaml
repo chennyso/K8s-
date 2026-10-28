@@ -1,0 +1,6 @@
+server: https://api.bbt.example.com:9345
+token-file: /etc/rancher/rke2/join-token
+node-name: g5
+node-ip: 172.20.10.21
+node-label:
+  - node-type=gpu

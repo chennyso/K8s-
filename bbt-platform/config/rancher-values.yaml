@@ -1,0 +1,10 @@
+hostname: rancher.bbt.example.com
+replicas: 3
+ingress:
+  ingressClassName: traefik
+  tls:
+    source: secret
+privateCA: true
+resources:
+  requests: {cpu: 500m, memory: 1Gi}
+  limits: {cpu: "2", memory: 4Gi}

@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: advisor-zhangsan
+  labels:
+    bbt.example.com/tenant: zhangsan
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: v1.36
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: ns-default-quota
+  namespace: advisor-zhangsan
+spec:
+  hard:
+    requests.cpu: "16"
+    limits.cpu: "32"
+    requests.memory: 128Gi
+    limits.memory: 256Gi
+    requests.storage: 200Gi
+    nfs-client.storageclass.storage.k8s.io/requests.storage: 200Gi
+    juicefs-sc.storageclass.storage.k8s.io/requests.storage: 500Gi
+    count/pods: "30"
+    count/jobs.batch: "20"
+    count/jobs.batch.volcano.sh: "20"
+    count/persistentvolumeclaims: "15"
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: ns-default-limits
+  namespace: advisor-zhangsan
+spec:
+  limits:
+    - type: Container
+      default: {cpu: "2", memory: 4Gi}
+      defaultRequest: {cpu: "1", memory: 2Gi}
+      max: {cpu: "32", memory: 256Gi}
+      min: {cpu: 100m, memory: 128Mi}
+      maxLimitRequestRatio: {cpu: "4", memory: "4"}
+    - type: PersistentVolumeClaim
+      min: {storage: 1Gi}
+      max: {storage: 200Gi}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: advisor-admin
+  namespace: advisor-zhangsan
+subjects:
+  - kind: User
+    name: REPLACE_WITH_ADVISOR_ID
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: bbt-namespace-advisor
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: student-example
+  namespace: advisor-zhangsan
+subjects:
+  - kind: User
+    name: REPLACE_WITH_STUDENT_ID
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: bbt-namespace-user

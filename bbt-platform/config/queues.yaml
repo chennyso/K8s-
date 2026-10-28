@@ -1,0 +1,27 @@
+apiVersion: scheduling.volcano.sh/v1beta1
+kind: Queue
+metadata:
+  name: root
+spec:
+  capability: {cpu: "96", memory: 192Gi, nvidia.com/gpu: "16"}
+  reclaimable: true
+---
+apiVersion: scheduling.volcano.sh/v1beta1
+kind: Queue
+metadata:
+  name: advisor-zhangsan
+spec:
+  parent: root
+  reclaimable: true
+  weight: 1
+  capability: {cpu: "16", memory: 128Gi}
+---
+apiVersion: scheduling.volcano.sh/v1beta1
+kind: Queue
+metadata:
+  name: advisor-zhangsan-gpu
+spec:
+  parent: root
+  reclaimable: true
+  weight: 1
+  capability: {nvidia.com/gpu: "16"}

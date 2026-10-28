@@ -1,0 +1,42 @@
+clusterName: bbt
+controller:
+  persistence:
+    enabled: true
+    existingClaim: slurm-state
+    storageClassName: platform-local
+    accessModes: [ReadWriteOnce]
+    resources:
+      requests:
+        storage: 4Gi
+  slurmctld:
+    resources:
+      requests: {cpu: 500m, memory: 512Mi}
+      limits: {cpu: "2", memory: 2Gi}
+  logfile:
+    image:
+      repository: docker.io/library/alpine
+      tag: "3.21"
+  podSpec:
+    volumes:
+      - name: shared
+        nfs: {server: 172.20.10.30, path: /exports/bbt}
+    containers:
+      - name: slurmctld
+        volumeMounts:
+          - {name: shared, mountPath: /shared}
+accounting:
+  enabled: true
+  storageConfig:
+    host: mariadb.slurm.svc.sspu.local
+    port: 3306
+    database: slurm_acct_db
+    username: slurm
+    passwordKeyRef:
+      name: mariadb-password
+      key: password
+nodesets:
+  slinky:
+    enabled: false
+loginsets:
+  slinky:
+    enabled: false

@@ -1,0 +1,42 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: bbt-learning-cpu
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 180
+  template:
+    metadata:
+      labels:
+        learning.bbt/task: cpu-sum
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: calculate
+          image: python:3.12-slim
+          command: [python, /code/calculate.py]
+          args: [--count, "1000000", --output-dir, /workspace/bbt-learning]
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: 400m, memory: 256Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - {name: code, mountPath: /code, readOnly: true}
+            - {name: workspace, mountPath: /workspace}
+      volumes:
+        - name: code
+          configMap: {name: bbt-learning-code}
+        - name: workspace
+          persistentVolumeClaim: {claimName: bbt-learning-workspace}

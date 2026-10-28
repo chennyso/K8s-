@@ -1,0 +1,36 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: bbt-volcano-queue-ownership
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [batch.volcano.sh]
+        apiVersions: [v1alpha1]
+        operations: [CREATE, UPDATE]
+        resources: [jobs]
+  validations:
+    - expression: "has(object.spec.queue) && (object.spec.queue == object.metadata.namespace || object.spec.queue == object.metadata.namespace + '-gpu')"
+      message: 任务只能使用本课题组的 CPU 或 GPU 队列
+    - expression: >-
+        object.spec.tasks.exists(t, t.template.spec.containers.exists(c,
+          has(c.resources) && has(c.resources.limits) && 'nvidia.com/gpu' in c.resources.limits))
+        ? object.spec.queue == object.metadata.namespace + '-gpu'
+        : object.spec.queue == object.metadata.namespace
+      message: GPU 任务应使用本组 GPU 队列，CPU 任务应使用本组 CPU 队列
+    - expression: "!has(object.spec.priorityClassName) || object.spec.priorityClassName in ['hpc-job-normal', 'gpu-job-high']"
+      message: 计算任务只能使用获准的 PriorityClass
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: bbt-volcano-queue-ownership
+spec:
+  policyName: bbt-volcano-queue-ownership
+  validationActions: [Deny]
+  matchResources:
+    namespaceSelector:
+      matchExpressions:
+        - key: bbt.example.com/tenant
+          operator: Exists

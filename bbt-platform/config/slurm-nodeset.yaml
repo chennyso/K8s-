@@ -1,0 +1,32 @@
+apiVersion: slinky.slurm.net/v1beta1
+kind: NodeSet
+metadata:
+  name: cpu-hpc
+  namespace: slurm
+spec:
+  controllerRef:
+    name: slurm
+    namespace: slurm
+  replicas: 2
+  scalingMode: StatefulSet
+  partition:
+    enabled: true
+  logfile:
+    image: docker.io/library/alpine:3.21
+    resources:
+      requests: {cpu: 50m, memory: 64Mi}
+      limits: {cpu: 100m, memory: 128Mi}
+  slurmd:
+    image: ghcr.io/slinkyproject/slurmd:25.11-ubuntu24.04
+    resources:
+      requests: {cpu: "4", memory: 8Gi}
+      limits: {cpu: "4", memory: 8Gi}
+    volumeMounts:
+      - {name: shared, mountPath: /shared}
+  template:
+    spec:
+      nodeSelector:
+        node-type: cpu
+      volumes:
+        - name: shared
+          nfs: {server: 172.20.10.30, path: /exports/bbt}

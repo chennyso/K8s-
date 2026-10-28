@@ -1,0 +1,23 @@
+apiVersion: crd.projectcalico.org/v1
+kind: BGPConfiguration
+metadata:
+  name: default
+spec:
+  asNumber: 64510
+  nodeToNodeMeshEnabled: false
+---
+apiVersion: crd.projectcalico.org/v1
+kind: BGPPeer
+metadata:
+  name: nodes-to-reflectors
+spec:
+  nodeSelector: "!has(route-reflector)"
+  peerSelector: "route-reflector == 'true'"
+---
+apiVersion: crd.projectcalico.org/v1
+kind: BGPPeer
+metadata:
+  name: reflectors-to-reflectors
+spec:
+  nodeSelector: "route-reflector == 'true'"
+  peerSelector: "route-reflector == 'true'"
