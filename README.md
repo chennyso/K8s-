@@ -2,6 +2,8 @@
 
 [在线阅读](https://chennyso.github.io/K8s-/)
 
+[零基础可执行实验室：Kind、kubeadm、监控、Volcano 与 BBT GPU 模板](lab/README.md)。提供最短实践路线、完整操作手册、验证脚本和下载包。
+
 [Kubernetes CI/CD 完整流程（Markdown）](bbt-platform/cicd/README.md)：代码提交、源码测试、BuildKit、候选镜像验证、GitOps 审核、Argo CD、滚动更新与业务验收。
 
 [BBT 平台从零构建：网络、存储、权限、调度与面试问答（Markdown）](bbt-platform/README.md)。配套提供 RKE2、Calico、NFS、JuiceFS、Rancher、RBAC、Volcano、SLURM、监控配置和计算示例。
