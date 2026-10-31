@@ -1,0 +1,27 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: lab-web-alerts
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  groups:
+    - name: cloud-native-lab.rules
+      rules:
+        - alert: LabWebUnavailable
+          expr: kube_deployment_status_replicas_available{namespace="cloud-native-lab",deployment="lab-web"} < 1
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: lab-web 没有可用副本
+            description: cloud-native-lab 命名空间中的 lab-web 已连续两分钟没有可用副本。
+        - alert: LabWebRestarting
+          expr: increase(kube_pod_container_status_restarts_total{namespace="cloud-native-lab",container="web"}[10m]) > 2
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: lab-web 容器重新启动次数过多
+            description: lab-web 的 web 容器在最近十分钟内重新启动超过两次。

@@ -1,0 +1,49 @@
+apiVersion: batch.volcano.sh/v1alpha1
+kind: Job
+metadata:
+  name: gpu-smoke
+  labels:
+    app.kubernetes.io/part-of: cloud-native-learning-lab
+spec:
+  schedulerName: volcano
+  queue: REPLACE_WITH_YOUR_GPU_QUEUE
+  minAvailable: 1
+  tasks:
+    - name: worker
+      replicas: 1
+      maxRetry: 1
+      policies:
+        - event: TaskCompleted
+          action: CompleteJob
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: pytorch
+              image: nvcr.io/nvidia/pytorch:26.04-py3
+              command: ["bash", "-c"]
+              args:
+                - |
+                  nvidia-smi
+                  python -c "import torch; print('cuda_available=', torch.cuda.is_available()); print('gpu_count=', torch.cuda.device_count())"
+                  mkdir -p /workspace/runs/gpu-smoke
+                  date -Iseconds > /workspace/runs/gpu-smoke/completed-at.txt
+              env:
+                - name: PYTHONUNBUFFERED
+                  value: "1"
+              resources:
+                requests:
+                  nvidia.com/gpu: "1"
+                  cpu: "2"
+                  memory: "8Gi"
+                limits:
+                  nvidia.com/gpu: "1"
+                  cpu: "4"
+                  memory: "16Gi"
+              volumeMounts:
+                - name: workspace
+                  mountPath: /workspace
+          volumes:
+            - name: workspace
+              persistentVolumeClaim:
+                claimName: workspace-pvc
